@@ -6,8 +6,8 @@ namespace Pentominoes
 {
 	// Enum for identifying all 63 unique pentomino orientations.
 	// Number suffix denotes the number of 90 degree clockwise rotations applied.
-	// M indicates that this is the reflection of an existing piece.
-	enum class Orientation
+	// M indicates that this is the reflection of the named piece.
+	enum class PieceOrientation
 	{
 		F0,  F1,  F2,  F3,
 		FM0, FM1, FM2, FM3,
@@ -20,8 +20,8 @@ namespace Pentominoes
 		Y0,  Y1,  Y2,  Y3,
 		YM0, YM1, YM2, YM3,
 		T0,  T1,  T2,  T3,
-		V0,  V1,  V2,  V3,
-		U0,  U1,  U2,  U3,
+		U0, U1, U2, U3,
+		V0,  V1,  V2,  V3,	
 		W0,  W1,  W2,  W3,
 		Z0,  Z1,
 		ZM0, ZM1,
@@ -35,17 +35,19 @@ namespace Pentominoes
 	{
 	public:
 		Pentomino() = delete;
-		Pentomino(Orientation piece);
-		static const std::string cPentominoData[63];
-		
+		Pentomino(PieceOrientation piece);
+		const std::string& getOrientationDataString() const;
+		int getRectangleWidth() const { return mRectangleWidth; }
+		int getRectangleHeight() const { return mRectangleHeight; }
+		std::string getOrientationLabelString() const;
 
 	private:
+		static const std::string cOrientationDataStrings[63];
+		static const std::string cOrientationLabelStrings[63];
 
-
-		Orientation mOrientation;
-		int mMinRectWidth{};
-		int mMinRectHeight{};
-		char mMap[5][5]{};
-
+		PieceOrientation mOrientation;
+		int mRectangleWidth{};
+		int mRectangleHeight{};
+		
 	};
 }

@@ -146,9 +146,11 @@
   <ItemGroup>
     <ClInclude Include="include\Pentomino.h" />
     <ClInclude Include="include\PentominoBoard.h" />
+    <ClInclude Include="include\PentominoSolver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\PentominoData.h" />
+    <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Pentomino.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
