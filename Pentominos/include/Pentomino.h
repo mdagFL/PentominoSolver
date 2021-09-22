@@ -39,7 +39,7 @@ namespace Pentominoes
 		const std::string& getOrientationDataString() const;
 		int getRectangleWidth() const { return mRectangleWidth; }
 		int getRectangleHeight() const { return mRectangleHeight; }
-		std::string getOrientationLabelString() const;
+		const std::string& getOrientationLabelString() const;
 
 	private:
 		static const std::string cOrientationDataStrings[63];

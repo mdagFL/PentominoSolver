@@ -2,9 +2,17 @@
 #include <string>
 
 #include "Pentomino.h"
+#include "PentominoBoard.h"
+
+
+
 
 int main()
 {
+	Pentominoes::PentominoBoard board;
+	board.promptUserInputBoard();
+
+	/*
 
 	for (int i = 0; i < 63; i++)
 	{
@@ -15,6 +23,7 @@ int main()
 		std::cout << "width: " << pent.getRectangleWidth() << ", height: " << pent.getRectangleHeight() << "\n\n";
 	}
 	
+	*/
 
 	return 0;
 }

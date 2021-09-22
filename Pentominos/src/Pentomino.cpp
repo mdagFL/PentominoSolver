@@ -22,7 +22,7 @@ namespace Pentominoes
 		return cOrientationDataStrings[static_cast<int>(mOrientation)];
 	}
 
-	std::string Pentomino::getOrientationLabelString() const
+	const std::string& Pentomino::getOrientationLabelString() const
 	{
 		return cOrientationLabelStrings[static_cast<int>(mOrientation)];
 	}

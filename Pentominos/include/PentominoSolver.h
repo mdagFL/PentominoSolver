@@ -14,5 +14,6 @@ namespace Pentominoes
 		
 		static std::vector<Pentominoes::PentominoBoard<width, height>> FindAllSolutions();
 	private:
+		std::vector<int> FindIslandAreas(PentominoBoard& board) const;
 	};
 }
