@@ -26,16 +26,24 @@ namespace Pentominoes
 	public:
 		PentominoBoard() {}; // prompt user to input
 		PentominoBoard(const std::string& board) 
-			: mBoard{ board }, mPentominoes{ std::vector<PlacedPentomino>()} {  } // shouldn't work?
+			: mBoard{ board }, mPlacedPentominoes{ } {  } 
 		
 		void promptUserInputBoard();
-		
-		bool hasNoSolution() const;
+		void printBoard() const;
+
 	private:
 		std::string mBoard{};
-		std::vector<PlacedPentomino> mPentominoes{};
-
-		void placePentomino(const Pentomino& piece, Point pos);
+		
+		std::vector<PlacedPentomino> mPlacedPentominoes{};
+		int mWidth{};
+		int mStrWidth{}; // mWidth+1
+		int mHeight{};
+		void removeRow(int row);
+		void removeColumn(int col);
+		void rectangularizeBoard();
+		void trimBoard();
+		bool pushPentomino(const Pentomino& piece, const Point& pos);
+		PlacedPentomino popPentomino();
 		
 
 	};

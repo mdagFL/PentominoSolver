@@ -5,10 +5,10 @@
 #include "PentominoBoard.h"
 
 
-
-
 int main()
 {
+	Pentominoes::Pentomino::printAll();
+
 	Pentominoes::PentominoBoard board;
 	board.promptUserInputBoard();
 

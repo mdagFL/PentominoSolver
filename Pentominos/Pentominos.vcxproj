@@ -144,6 +144,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Debug.h" />
     <ClInclude Include="include\Pentomino.h" />
     <ClInclude Include="include\PentominoBoard.h" />
     <ClInclude Include="include\PentominoSolver.h" />
