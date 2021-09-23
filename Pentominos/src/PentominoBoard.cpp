@@ -10,10 +10,6 @@ namespace Pentominoes
 {
 	void PentominoBoard::promptUserInputBoard()
 	{
-		Pentomino p{ Pentominoes::PieceOrientation::FM3 };
-		PlacedPentomino pp{ p, Point(3,5) };
-		mPlacedPentominoes.push_back(pp);
-
 		std::cout << "Enter the board to be solved:\n";
 		std::string line;
 		std::getline(std::cin, line);
@@ -198,21 +194,5 @@ namespace Pentominoes
 #endif
 	}
 
-	// If legal placement, returns true and places the piece on the board.
-	bool PentominoBoard::pushPentomino(const Pentomino& piece, const Point& pos)
-	{
-		// to do
-		mPlacedPentominoes.push_back(PlacedPentomino{ piece, pos });
-		return false;
-	}
-
-	// Precondition: At least 1 placed pentomino on the board
-	// Pop the last placed pentomino
-	PlacedPentomino PentominoBoard::popPentomino()
-	{
-		assert(mPlacedPentominoes.size() > 0);
-		PlacedPentomino piece = mPlacedPentominoes.back();
-		mPlacedPentominoes.pop_back();
-		return piece;
-	}
+	
 }

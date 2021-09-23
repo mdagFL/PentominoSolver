@@ -14,19 +14,14 @@ namespace Pentominoes
 		{}
 	};
 
-	struct PlacedPentomino
-	{
-		Pentomino pentomino;
-		Point position;
-		PlacedPentomino(const Pentomino& a_pentomino, Point a_position) : pentomino{ a_pentomino }, position{ a_position } {}
-	};
+	
 
 	class PentominoBoard
 	{
 	public:
 		PentominoBoard() {}; // prompt user to input
 		PentominoBoard(const std::string& board) 
-			: mBoard{ board }, mPlacedPentominoes{ } {  } 
+			: mBoard{ board } {  } 
 		
 		void promptUserInputBoard();
 		void printBoard() const;
@@ -34,16 +29,14 @@ namespace Pentominoes
 	private:
 		std::string mBoard{};
 		
-		std::vector<PlacedPentomino> mPlacedPentominoes{};
 		int mWidth{};
 		int mStrWidth{}; // mWidth+1
 		int mHeight{};
+
 		void removeRow(int row);
 		void removeColumn(int col);
 		void rectangularizeBoard();
 		void trimBoard();
-		bool pushPentomino(const Pentomino& piece, const Point& pos);
-		PlacedPentomino popPentomino();
 		
 
 	};

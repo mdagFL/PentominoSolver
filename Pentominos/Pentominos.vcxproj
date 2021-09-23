@@ -154,6 +154,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\Pentomino.cpp" />
     <ClCompile Include="src\PentominoBoard.cpp" />
+    <ClCompile Include="src\PentominoSolver.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

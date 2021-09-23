@@ -41,5 +41,8 @@
     <ClCompile Include="src\PentominoBoard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\PentominoSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
