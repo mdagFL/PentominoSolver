@@ -44,11 +44,23 @@ namespace Pentominoes
 #endif
 		rectangularizeBoard();
 		trimBoard();
+		removeNewLines();
 	}
 
-	void PentominoBoard::printBoard() const
+	void PentominoBoard::printBoard()
 	{
+		// if newline characters were removed
+		// insert them, print, then remove
+		bool containsNewLines = (mBoard.find('\n') != std::string::npos);
+
+		if (!containsNewLines)
+			insertNewLines();
+
 		std::cout << mBoard << "\n";
+
+		if (!containsNewLines)
+			removeNewLines();
+
 	}
 
 	// Insert padding to the board to keep new lines a fixed width apart
@@ -110,7 +122,7 @@ namespace Pentominoes
 		std::cout << "Removed column " << col << "\n";
 #endif
 	}
-
+	
 	// Remove any bordering rows or columns that are only 1s
 	void PentominoBoard::trimBoard()
 	{
@@ -194,5 +206,24 @@ namespace Pentominoes
 #endif
 	}
 
-	
+	void PentominoBoard::removeNewLines()
+	{
+		for (int row = 0; row < mHeight; row++)
+		{
+			mBoard.erase(row * mWidth + mWidth, 1);
+		}
+	}
+
+	void PentominoBoard::insertNewLines()
+	{
+		for (int row = 0; row < mHeight; row++)
+		{
+			mBoard.insert(mStrWidth*row + mWidth, "\n");
+		}
+	}
+
+	char PentominoBoard::operator[](int i) const
+	{
+		return mBoard[i];
+	}
 }

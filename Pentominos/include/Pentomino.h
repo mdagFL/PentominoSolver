@@ -40,6 +40,7 @@ namespace Pentominoes
 		Pentomino(PieceOrientation piece);
 
 		static void printAll();
+		static void removeNewLines(std::string& str); // questionable placement
 
 		int GetXOffset() const { return mXOffset; }
 		int getRectangleWidth() const { return mRectangleWidth; }

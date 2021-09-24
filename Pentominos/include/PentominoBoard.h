@@ -19,12 +19,15 @@ namespace Pentominoes
 	class PentominoBoard
 	{
 	public:
+		friend class PentominoSolver;
 		PentominoBoard() {}; // prompt user to input
-		PentominoBoard(const std::string& board) 
-			: mBoard{ board } {  } 
-		
+		PentominoBoard(const std::string& board)
+			: mBoard{ board } {  }
+
 		void promptUserInputBoard();
-		void printBoard() const;
+		void printBoard(); // Would be const, but new lines may be inserted and then removed..
+		int getWidth() const { return mWidth; }
+		int getHeight() const { return mHeight; }
 
 	private:
 		std::string mBoard{};
@@ -37,8 +40,10 @@ namespace Pentominoes
 		void removeColumn(int col);
 		void rectangularizeBoard();
 		void trimBoard();
-		
+		void removeNewLines();
+		void insertNewLines();
 
+		char operator[](int i) const;
 	};
 
 

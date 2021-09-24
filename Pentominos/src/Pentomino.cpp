@@ -48,4 +48,14 @@ namespace Pentominoes
 	{
 		return cOrientationLabelStrings[static_cast<int>(mOrientation)];
 	}
+
+	void Pentomino::removeNewLines(std::string& str)
+	{
+		int next = str.find('\n');
+		while (next != std::string::npos)
+		{
+			str.erase(next, 1);
+			next = str.find('\n');
+		}
+	}
 }
