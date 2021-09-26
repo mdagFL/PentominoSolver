@@ -7,6 +7,7 @@
 
 namespace Pentominoes
 {
+	int PentominoSolver::numSolutions{ 0 };
 
 	// If legal placement, returns true and places the piece on the board.
 	bool PentominoSolver::tryPushPentomino(const Pentomino& piece, const Point& pos)
@@ -36,7 +37,7 @@ namespace Pentominoes
 						if (mBoard[boardPosIndex] != '0')
 						{
 #if DEBUG_LEVEL > 1
-							std::cout << "Failed to place piece " + piece.getLabelString() << "\n";
+							std::cout << "Failed to place piece " + piece.getLabelString() << " at (" << pos.x << ", " << pos.y << ")\n";
 #endif
 							return false;
 						}
@@ -59,7 +60,7 @@ namespace Pentominoes
 			mBoard.mBoard = boardStringCopy;
 
 #if DEBUG_LEVEL > 1
-			std::cout << "Successfully placed piece " + piece.getLabelString() << "\n";
+			std::cout << "Successfully placed piece " + piece.getLabelString() << " at (" << pos.x << ", " << pos.y << ")\n";
 			std::cout << "New board:\n";
 			mBoard.printBoard();
 #endif
@@ -68,7 +69,7 @@ namespace Pentominoes
 		else
 		{
 #if DEBUG_LEVEL > 1
-			std::cout << "Failed to place piece " + piece.getLabelString() << "\n";
+			std::cout << "Failed to place piece " + piece.getLabelString() << " at (" << pos.x << ", " << pos.y << ")\n";
 #endif
 			return false;
 		}
@@ -84,18 +85,133 @@ namespace Pentominoes
 		PlacedPentomino piece = mPlacedPentominoes.back();
 		mPlacedPentominoes.pop_back();
 		--mNextSymbol;
+
+		// Clean the piece off the board
+		mBoard.replaceChars(mNextSymbol, '0');
+
+		
 		return piece;
 	}
 
-	std::vector<PentominoSolver> PentominoSolver::findAllSolutions()
+	void PentominoSolver::findAllSolutions(const PentominoBoard& board)
 	{
-		// TO DO
-		return std::vector<PentominoSolver>();
+		// TO DO: return a vector of solutions
+		numSolutions = 0;
+		PentominoSolver solver(board);
+
+		int startIndex{ static_cast<int>(board.mBoard.find('0')) };
+		for (int i = Pentomino::cTotalOrientations-1; i >= 0; i--)
+		{
+			Pentomino startPiece(static_cast<PieceOrientation>(i));
+			int x = startIndex % board.mWidth - startPiece.GetXOffset();
+			int y = startIndex / board.mWidth;
+			solver.searchSimple(startPiece, Point(x, y), 1);
+		}
+
+		std::cout << "\nTotal solutions: " << numSolutions << "\n";
 	}
 
-	std::vector<int> PentominoSolver::findHoleAreas() const
+
+	// Recursive backtracking function to find and print all solutions
+	// Takes an initial piece and position to continue searching from.
+	void PentominoSolver::searchSimple(const Pentomino& piece, const Point& pos, int depth)
 	{
-		// TO DO
-		return std::vector<int>();
+		if (tryPushPentomino(piece, pos))
+		{
+			int nextZeroIndex{ static_cast<int>(mBoard.mBoard.find('0')) };
+			if (nextZeroIndex == std::string::npos)
+			{
+#if DEBUG_LEVEL > 1
+				std::cout << "Solution found!\n";
+#endif
+				// Board is solved
+				mBoard.printBoard();
+				numSolutions++;
+				// Store solution?
+				// Leaf node reached, backtrack
+				popPentomino();
+				return;
+			}
+			else if (isPossibleSolution())
+			{
+				// Next branches consist of all fitting pieces in the next available spot
+				for (int i = Pentomino::cTotalOrientations-1; i >= 0; i--)
+				{
+					Pentomino nextPiece(static_cast<PieceOrientation>(i));
+					int x{ nextZeroIndex % mBoard.mWidth };
+					int y{ nextZeroIndex / mBoard.mWidth };
+					Point nextPos(x - nextPiece.GetXOffset(), y);
+					searchSimple(nextPiece, nextPos, depth+1);
+				}
+				// All branches at this level explored, backtrack
+#if DEBUG_LEVEL > 1
+				std::cout << "All branches explored at depth = " << depth << "!\n";
+#endif
+				popPentomino();
+				return;
+			}
+			else
+			{
+				// Bad branch: cut it and backtrack
+#if DEBUG_LEVEL > 1
+				std::cout << "Bad branch cut!\n";
+#endif
+				popPentomino();
+				return;
+			}
+		}
+		else // Not a branch; piece doesn't fit in this spot
+			return;
 	}
+
+	bool PentominoSolver::isPossibleSolution()
+	{
+		std::vector<int> areas(findHoleAreas());
+
+		for (int area : areas)
+		{
+			if (area % 5 != 0)
+				return false;
+		}
+		return true;
+	}
+
+	std::vector<int> PentominoSolver::findHoleAreas()
+	{
+		std::vector<int> areas;
+		for (int i = 0; i < mBoard.mHeight; i++)
+		{
+			for (int j = 0; j < mBoard.mWidth; j++)
+			{
+				if (mBoard[i * mBoard.mWidth + j] == '0')
+					areas.push_back(findHoleArea(Point(j, i)));
+			}
+		}
+
+		// Unmark the holes on the board
+		mBoard.replaceChars('m', '0');
+			
+		return areas;
+	}
+
+	// Recursive function to sum all the adjacent holes in a given hole on the board.
+	int PentominoSolver::findHoleArea(const Point& posHole)
+	{
+		int boardIndex = posHole.x + posHole.y * mBoard.mWidth;
+		// Check if the point is in bounds of the board, and is actually a hole
+		if (posHole.x >= 0 && posHole.x < mBoard.mWidth
+			&& posHole.y >= 0 && posHole.y < mBoard.mHeight
+			&& mBoard[boardIndex] == '0')
+		{
+			mBoard[boardIndex] = 'm';
+			return 1 +
+				findHoleArea(Point(posHole.x, posHole.y - 1)) +
+				findHoleArea(Point(posHole.x + 1, posHole.y)) +
+				findHoleArea(Point(posHole.x, posHole.y + 1)) +
+				findHoleArea(Point(posHole.x - 1, posHole.y));
+		}
+		else
+			return 0;
+	}
+
 }

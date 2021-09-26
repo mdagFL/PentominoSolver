@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <stdlib.h>
+#include <windows.h>
+#include <wincon.h>
 
 #include "Pentomino.h"
 
@@ -30,6 +33,8 @@ namespace Pentominoes
 		int getHeight() const { return mHeight; }
 
 	private:
+		static HANDLE consoleHandle;
+
 		std::string mBoard{};
 		
 		int mWidth{};
@@ -42,8 +47,10 @@ namespace Pentominoes
 		void trimBoard();
 		void removeNewLines();
 		void insertNewLines();
+		void replaceChars(char oldChar, char newChar);
 
 		char operator[](int i) const;
+		char& operator[](int i);
 	};
 
 

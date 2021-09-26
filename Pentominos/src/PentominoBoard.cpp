@@ -8,9 +8,11 @@
 
 namespace Pentominoes
 {
+	HANDLE PentominoBoard::consoleHandle{ GetStdHandle(STD_OUTPUT_HANDLE) };
 	void PentominoBoard::promptUserInputBoard()
 	{
-		std::cout << "Enter the board to be solved:\n";
+		std::cout << "Enter 1s (walls) and 0s (holes) across multiple lines to create \n"
+			"the board to be solved, and press enter 2 times when finished:\n";
 		std::string line;
 		std::getline(std::cin, line);
 		while (line[0])
@@ -55,9 +57,35 @@ namespace Pentominoes
 
 		if (!containsNewLines)
 			insertNewLines();
+		
+		for (int i = 0; i < mBoard.length(); i++)
+		{
+			if (mBoard[i] >= 'A')
+			{
+				// Change colors
+				// Not exactly sure why this works lol...
+				int textColor = ((mBoard[i] - 'A') % 14)+1; // skip 0 (black)
+				if (textColor > 7) // skip 8 (dark gray), reserved for 1s
+					textColor++;
+				int finalColor = (textColor << 4) | textColor;
+				SetConsoleTextAttribute(consoleHandle, finalColor);
+				
+				
+			}
+			else if (mBoard[i] == '1')
+			{
+				SetConsoleTextAttribute(consoleHandle, 8 << 4);
+			}
+			else
+			{
+				// Restore b/w
+				SetConsoleTextAttribute(consoleHandle, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+			}
 
-		std::cout << mBoard << "\n";
-
+			// Print the char
+			std::cout << mBoard[i];
+		}
+		std::cout << "\n";
 		if (!containsNewLines)
 			removeNewLines();
 
@@ -222,7 +250,22 @@ namespace Pentominoes
 		}
 	}
 
+	void PentominoBoard::replaceChars(char oldChar, char newChar)
+	{
+		int nextCharIndex = static_cast<int>(mBoard.find(oldChar));
+		while (nextCharIndex != std::string::npos)
+		{
+			mBoard[nextCharIndex] = newChar;
+			nextCharIndex = static_cast<int>(mBoard.find(oldChar));
+		}
+	}
+
 	char PentominoBoard::operator[](int i) const
+	{
+		return mBoard[i];
+	}
+
+	char& PentominoBoard::operator[](int i)
 	{
 		return mBoard[i];
 	}

@@ -20,16 +20,23 @@ namespace Pentominoes
 	public:
 		PentominoSolver(const PentominoBoard& board) : mBoard{ board }, mPlacedPentominoes {} {}
 		bool tryPushPentomino(const Pentomino& piece, const Point& pos);
-		PlacedPentomino popPentomino();
+		bool isPossibleSolution();
 		
-		static std::vector<Pentominoes::PentominoSolver> findAllSolutions();
+
+		PlacedPentomino popPentomino(); 
+		void searchSimple(const Pentomino& piece, const Point& pos, int depth);
+
+
+		static void findAllSolutions(const PentominoBoard& board);
+		
 	private:		
 		PentominoBoard mBoard;
 		std::vector<PlacedPentomino> mPlacedPentominoes{};
 
-		
-		std::vector<int> findHoleAreas() const;
+		std::vector<int> findHoleAreas();
+		int findHoleArea(const Point& posHole);
 		char mNextSymbol{ 'A' }; // 1-char symbol to represent each instance of a piece in the solution
+		static int numSolutions;
 		
 		
 	};

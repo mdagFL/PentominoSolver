@@ -1,0 +1,54 @@
+Simple backtracking approach to the solver:
+    
+
+searchSimple(piece2try, coord2try)
+    if (tryPlace(piece2try, coord2try)
+        if (boardSolved)
+            printSolution()
+            storeSolution()
+            popPentomino() // leaf node, backtrack
+            return;
+        else if (possibleSolution())
+            for i = 0 to 63
+                piece p = piece(i)
+                search(p, getNextCoord())
+            popPentomino() // leaf node, backtrack
+            return;
+        else
+            popPentomino() // leaf node, backtrack
+            return;
+
+point getNextCoord()
+    for (i = 0 to map.height)
+        for (j = 0 to map.width)
+            if (map[i*width+j] = '0')
+                return point(i, j)
+    
+    
+bool isPossibleSolution()
+    areas = findHoleAreas()
+    for each area in areas
+        if (area % 5) != 0
+            return false
+    return true
+        
+        
+vector<int> findHoleAreas()
+    vector<int> areas;
+    for (i = 0 to map.height)
+        for (j = 0 to map.width)
+            if (map[i*width+j] == '0')
+                areas.push(findHoleArea(point(i, j)))
+    
+findHoleArea(pos)
+    if map[pos] = '0'
+        map[pos] = 'm'
+        return 1 +
+        findHoleArea(point(pos.x+1,pos.y)) +
+        findHoleArea(point(pos.x, pos.y+1)) +
+        findHoleArea(point(pos.x-1, pos.y)) +
+        findHoleArea(point(pos.x, pos.y-1))
+    else
+        return 0;
+    
+    
