@@ -1,5 +1,7 @@
 #include <cassert>
 #include <iostream>
+#include <thread>
+
 
 #include "PentominoSolver.h"
 #include "Debug.h"
@@ -7,7 +9,38 @@
 
 namespace Pentominoes
 {
-	int PentominoSolver::numSolutions{ 0 };
+	std::mutex PentominoSolver::lock{};
+	std::vector<PentominoSolver>* PentominoSolver::solutionsFound = new std::vector<PentominoSolver>;
+	std::chrono::duration<double> PentominoSolver::durationLastSolution{};
+
+
+	PentominoSolver::PentominoSolver(const PentominoBoard& board, bool minimizeRepeats) 
+		: mBoard{ board }, mMinimizeRepeats{ minimizeRepeats }
+	{
+		
+		if (mMinimizeRepeats)
+		{
+			mPiecesAvailable = new bool[Pentomino::cTotalOrientations];
+			resetAvailable();
+		}
+	}
+
+	PentominoSolver::PentominoSolver(const PentominoSolver& original) 
+		: mBoard{ original.mBoard }, mMinimizeRepeats{ original.mMinimizeRepeats }
+	{
+		if (mMinimizeRepeats)
+		{
+			mPiecesAvailable = new bool[Pentomino::cTotalOrientations];
+			for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+				mPiecesAvailable[i] = original.mPiecesAvailable[i];
+		}
+	}
+
+	PentominoSolver::~PentominoSolver()
+	{		
+		if (mMinimizeRepeats)
+			delete[] mPiecesAvailable;;
+	}
 
 	// If legal placement, returns true and places the piece on the board.
 	bool PentominoSolver::tryPushPentomino(const Pentomino& piece, const Point& pos)
@@ -59,6 +92,10 @@ namespace Pentominoes
 			// Update the board to the copy
 			mBoard.mBoard = boardStringCopy;
 
+			// If minimizing repeats, mark this piece orientation as unavailable
+			if (mMinimizeRepeats)
+				mPiecesAvailable[static_cast<int>(piece)] = false;
+
 #if DEBUG_LEVEL > 1
 			std::cout << "Successfully placed piece " + piece.getLabelString() << " at (" << pos.x << ", " << pos.y << ")\n";
 			std::cout << "New board:\n";
@@ -82,33 +119,54 @@ namespace Pentominoes
 	PlacedPentomino PentominoSolver::popPentomino()
 	{
 		assert(mPlacedPentominoes.size() > 0);
-		PlacedPentomino piece = mPlacedPentominoes.back();
+
+		PlacedPentomino piece{ mPlacedPentominoes.back() };
 		mPlacedPentominoes.pop_back();
 		--mNextSymbol;
 
 		// Clean the piece off the board
 		mBoard.replaceChars(mNextSymbol, '0');
 
+		if (mMinimizeRepeats)
+			mPiecesAvailable[static_cast<int>(piece.pentomino)] = true;
 		
 		return piece;
 	}
 
-	void PentominoSolver::findAllSolutions(const PentominoBoard& board)
+	void PentominoSolver::findAllSolutions(const PentominoBoard& board, bool minimizeRepeats, bool multithreading)
 	{
-		// TO DO: return a vector of solutions
-		numSolutions = 0;
-		PentominoSolver solver(board);
+		using std::chrono::steady_clock;
+		solutionsFound->clear();
+		steady_clock::time_point begin(steady_clock::now());
 
+		PentominoSolver solver(board, minimizeRepeats);
+		//solutionsFound.reserve(board.mWidth * board.mHeight)
 		int startIndex{ static_cast<int>(board.mBoard.find('0')) };
-		for (int i = Pentomino::cTotalOrientations-1; i >= 0; i--)
+
+		std::vector<std::thread> threads {};
+		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
 		{
 			Pentomino startPiece(static_cast<PieceOrientation>(i));
 			int x = startIndex % board.mWidth - startPiece.GetXOffset();
 			int y = startIndex / board.mWidth;
-			solver.searchSimple(startPiece, Point(x, y), 1);
+			if (multithreading)
+			{
+				threads.emplace_back(std::thread(&PentominoSolver::searchSimple, PentominoSolver(solver), startPiece, Point(x,y), 0));
+			}
+			else
+				solver.searchSimple(startPiece, Point(x, y), 1);
 		}
 
-		std::cout << "\nTotal solutions: " << numSolutions << "\n";
+		for (int i = 0; i < threads.size(); i++)
+		{
+			threads[i].join();
+		}
+		threads.clear();
+		std::cout << "\nTotal solutions: " << solutionsFound->size() << "\n";
+		steady_clock::time_point end(steady_clock::now());
+		durationLastSolution = std::chrono::duration_cast<std::chrono::duration<double >> (end - begin);
+		std::cout << "Time elapsed: " << durationLastSolution.count();
+		
 	}
 
 
@@ -118,30 +176,53 @@ namespace Pentominoes
 	{
 		if (tryPushPentomino(piece, pos))
 		{
+			// Find next zero, used to calculate where to place the next piece
 			int nextZeroIndex{ static_cast<int>(mBoard.mBoard.find('0')) };
 			if (nextZeroIndex == std::string::npos)
 			{
+
+				// Board is solved, add the solution
+				lock.lock();
+				solutionsFound->emplace_back(*this);
+				lock.unlock();
 #if DEBUG_LEVEL > 1
 				std::cout << "Solution found!\n";
 #endif
-				// Board is solved
-				mBoard.printBoard();
-				numSolutions++;
-				// Store solution?
 				// Leaf node reached, backtrack
 				popPentomino();
 				return;
 			}
 			else if (isPossibleSolution())
 			{
-				// Next branches consist of all fitting pieces in the next available spot
-				for (int i = Pentomino::cTotalOrientations-1; i >= 0; i--)
+				// Next branches consist of all available fitting pieces in the next available spot		
+				if (mMinimizeRepeats)
 				{
-					Pentomino nextPiece(static_cast<PieceOrientation>(i));
-					int x{ nextZeroIndex % mBoard.mWidth };
-					int y{ nextZeroIndex / mBoard.mWidth };
-					Point nextPos(x - nextPiece.GetXOffset(), y);
-					searchSimple(nextPiece, nextPos, depth+1);
+					if (checkNoPiecesAvailable())
+						resetAvailable();
+
+					for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+					{
+						if (mPiecesAvailable[i])
+						{
+							Pentomino nextPiece(static_cast<PieceOrientation>(i));
+							int x{ nextZeroIndex % mBoard.mWidth };
+							int y{ nextZeroIndex / mBoard.mWidth };
+							Point nextPos(x - nextPiece.GetXOffset(), y); // 
+							searchSimple(nextPiece, nextPos, depth + 1);
+						}
+					}
+				}
+				
+				else
+				{
+					for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+					{
+						Pentomino nextPiece(static_cast<PieceOrientation>(i));
+						int x{ nextZeroIndex % mBoard.mWidth };
+						int y{ nextZeroIndex / mBoard.mWidth };
+						Point nextPos(x - nextPiece.GetXOffset(), y);
+						searchSimple(nextPiece, nextPos, depth + 1);
+					}
 				}
 				// All branches at this level explored, backtrack
 #if DEBUG_LEVEL > 1
@@ -162,6 +243,26 @@ namespace Pentominoes
 		}
 		else // Not a branch; piece doesn't fit in this spot
 			return;
+	}
+
+	// Precondition: mMinimizeRepeats == true
+	void PentominoSolver::resetAvailable()
+	{
+		assert(mMinimizeRepeats == true);
+		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+			mPiecesAvailable[i] = true;
+	}
+
+	bool PentominoSolver::checkNoPiecesAvailable() const
+	{
+		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+		{
+			if (mPiecesAvailable[i])
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	bool PentominoSolver::isPossibleSolution()

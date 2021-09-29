@@ -13,7 +13,7 @@ int main()
 	Pentominoes::PentominoBoard board;
 	board.promptUserInputBoard();
 	
-	Pentominoes::PentominoSolver::findAllSolutions(board);
+	Pentominoes::PentominoSolver::findAllSolutions(board, false, true);
 
 	/*
 	Pentominoes::PentominoSolver solver(board);
@@ -25,3 +25,4 @@ int main()
 
 	
 }
+

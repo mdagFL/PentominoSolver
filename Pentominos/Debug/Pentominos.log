@@ -1,4 +1,2 @@
-﻿  PentominoBoard.cpp
-C:\dev\git\Pentominoes\Pentominos\src\PentominoBoard.cpp(23,22): warning C4018: '>': signed/unsigned mismatch
-C:\dev\git\Pentominoes\Pentominos\src\PentominoBoard.cpp(61,21): warning C4018: '<': signed/unsigned mismatch
+﻿  main.cpp
   Pentominos.vcxproj -> C:\dev\git\Pentominoes\Debug\Pentominoes.exe

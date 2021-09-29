@@ -47,7 +47,10 @@ namespace Pentominoes
 		int getRectangleHeight() const { return mRectangleHeight; }
 		const std::string& getDataString() const;
 		const std::string& getLabelString() const;
-		
+		PieceOrientation getOrientation() const { return mOrientation; }
+
+		explicit operator int() const { return static_cast<int>(mOrientation); }
+
 	private:
 		static const std::string cOrientationDataStrings[63];
 		static const std::string cOrientationLabelStrings[63]; // mainly for debugging
