@@ -14,10 +14,84 @@ namespace Pentominoes
 	std::chrono::duration<double> PentominoSolver::durationLastSolution{};
 
 
-	PentominoSolver::PentominoSolver(const PentominoBoard& board, bool minimizeRepeats) 
-		: mBoard{ board }, mMinimizeRepeats{ minimizeRepeats }
+	void PentominoSolver::findAllSolutions(const PentominoBoard& board, bool minimizeRepeats, bool multithreading)
 	{
+		using std::chrono::steady_clock;
+		solutionsFound->clear();
+		steady_clock::time_point begin(steady_clock::now());
+
+		PentominoSolver solver(board, minimizeRepeats);
+		//solutionsFound.reserve(board.mWidth * board.mHeight)
+		int startIndex{ static_cast<int>(board.mBoard.find('0')) };
+
+		std::vector<std::thread> threads{};
+		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+		{
+			Pentomino startPiece(static_cast<PieceOrientation>(i));
+			int x = startIndex % board.mWidth - startPiece.GetXOffset();
+			int y = startIndex / board.mWidth;
+			if (multithreading)
+			{
+				threads.emplace_back(std::thread(&PentominoSolver::searchSimple, PentominoSolver(solver), startPiece, Point(x, y), 0));
+			}
+			else
+				solver.searchSimple(startPiece, Point(x, y), 1);
+		}
+
+		for (int i = 0; i < threads.size(); i++)
+		{
+			threads[i].join();
+		}
+		threads.clear();
+		std::cout << "\nTotal solutions: " << solutionsFound->size() << "\n";
+		steady_clock::time_point end(steady_clock::now());
+		durationLastSolution = std::chrono::duration_cast<std::chrono::duration<double >> (end - begin);
+		std::cout << "Time elapsed: " << durationLastSolution.count() << "\n";
+
+	}
+
+	void PentominoSolver::printSolutions()
+	{
+		CONSOLE_SCREEN_BUFFER_INFO csbi;
+		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+		int consoleColumns { csbi.srWindow.Right - csbi.srWindow.Left + 1 };
+
+		int height{ solutionsFound->at(0).mBoard.mHeight };
+		int width{ solutionsFound->at(0).mBoard.mWidth };
+		int solutionsPerRow{consoleColumns / (width+1)};
+
+		if (solutionsFound->size() > 0)
+		{
+			
+			// Iterate through all solutions in batches of size solutionsPerRow
+			for (int i = 0; i < solutionsFound->size(); i+= solutionsPerRow)
+			{
+				// If last row, only access remaining solutions
+				int solutionsThisRow = (i + solutionsPerRow > solutionsFound->size())? solutionsFound->size() % solutionsPerRow : solutionsPerRow;
+
+				// Print each batch line height times
+				for (int j = 0; j < height; j++)
+				{
+					// Iterate through the batch
+					for (int k = 0; k < solutionsThisRow; k++)
+					{
+						solutionsFound->at(i + k).mBoard.printLine(j);
+						std::cout << " ";
+					}
+				
+				std::cout << "\n";
+				}
+				
+				std::cout << "\n";
+			}
+		}
 		
+	}
+
+
+	PentominoSolver::PentominoSolver(const PentominoBoard& board, bool minimizeRepeats) 
+		: mBoard{ board }, mMinimizeRepeats{ minimizeRepeats }, mPiecesAvailable{ nullptr }
+	{
 		if (mMinimizeRepeats)
 		{
 			mPiecesAvailable = new bool[Pentomino::cTotalOrientations];
@@ -25,8 +99,8 @@ namespace Pentominoes
 		}
 	}
 
-	PentominoSolver::PentominoSolver(const PentominoSolver& original) 
-		: mBoard{ original.mBoard }, mMinimizeRepeats{ original.mMinimizeRepeats }
+	PentominoSolver::PentominoSolver(const PentominoSolver& original)
+		: mBoard{ original.mBoard }, mMinimizeRepeats{ original.mMinimizeRepeats }, mPiecesAvailable{ nullptr }
 	{
 		if (mMinimizeRepeats)
 		{
@@ -133,41 +207,7 @@ namespace Pentominoes
 		return piece;
 	}
 
-	void PentominoSolver::findAllSolutions(const PentominoBoard& board, bool minimizeRepeats, bool multithreading)
-	{
-		using std::chrono::steady_clock;
-		solutionsFound->clear();
-		steady_clock::time_point begin(steady_clock::now());
-
-		PentominoSolver solver(board, minimizeRepeats);
-		//solutionsFound.reserve(board.mWidth * board.mHeight)
-		int startIndex{ static_cast<int>(board.mBoard.find('0')) };
-
-		std::vector<std::thread> threads {};
-		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
-		{
-			Pentomino startPiece(static_cast<PieceOrientation>(i));
-			int x = startIndex % board.mWidth - startPiece.GetXOffset();
-			int y = startIndex / board.mWidth;
-			if (multithreading)
-			{
-				threads.emplace_back(std::thread(&PentominoSolver::searchSimple, PentominoSolver(solver), startPiece, Point(x,y), 0));
-			}
-			else
-				solver.searchSimple(startPiece, Point(x, y), 1);
-		}
-
-		for (int i = 0; i < threads.size(); i++)
-		{
-			threads[i].join();
-		}
-		threads.clear();
-		std::cout << "\nTotal solutions: " << solutionsFound->size() << "\n";
-		steady_clock::time_point end(steady_clock::now());
-		durationLastSolution = std::chrono::duration_cast<std::chrono::duration<double >> (end - begin);
-		std::cout << "Time elapsed: " << durationLastSolution.count();
-		
-	}
+	
 
 
 	// Recursive backtracking function to find and print all solutions

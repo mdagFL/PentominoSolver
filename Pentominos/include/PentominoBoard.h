@@ -28,7 +28,8 @@ namespace Pentominoes
 			: mBoard{ board } {  }
 
 		void promptUserInputBoard();
-		void printBoard(); // Would be const, but new lines may be inserted and then removed..
+		void printBoard() const;
+		void printLine(int row) const;
 		int getWidth() const { return mWidth; }
 		int getHeight() const { return mHeight; }
 

@@ -48,47 +48,54 @@ namespace Pentominoes
 		trimBoard();
 		removeNewLines();
 	}
-
-	void PentominoBoard::printBoard()
+	void PentominoBoard::printLine(int row) const
 	{
-		// if newline characters were removed
-		// insert them, print, then remove
-		bool containsNewLines = (mBoard.find('\n') != std::string::npos);
-
-		if (!containsNewLines)
-			insertNewLines();
-		
-		for (int i = 0; i < mBoard.length(); i++)
+		int newLinesOffset{};
+		if (mBoard.find('\n') != std::string::npos)
+			newLinesOffset = 1;
+		if (row < mHeight) 
 		{
-			if (mBoard[i] >= 'A')
+			for (int i = row * (mWidth + newLinesOffset) ; i < row * (mWidth + newLinesOffset) + mWidth; i++)
 			{
-				// Change colors
-				// Not exactly sure why this works lol...
-				int textColor = ((mBoard[i] - 'A') % 14)+1; // skip 0 (black)
-				if (textColor > 7) // skip 8 (dark gray), reserved for 1s
-					textColor++;
-				int finalColor = (textColor << 4) | textColor;
-				SetConsoleTextAttribute(consoleHandle, finalColor);
-				
-				
-			}
-			else if (mBoard[i] == '1')
-			{
-				SetConsoleTextAttribute(consoleHandle, 8 << 4);
-			}
-			else
-			{
-				// Restore b/w
-				SetConsoleTextAttribute(consoleHandle, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
-			}
+				if (mBoard[i] >= 'A')
+				{
+					// Change colors
+					int textColor = ((mBoard[i] - 'A') % 14) + 1; // skip 0 (black)
+					if (textColor > 7) // skip 8 (dark gray), reserved for 1s
+						textColor++;
+					int finalColor = (textColor << 4) | textColor;
+					SetConsoleTextAttribute(consoleHandle, finalColor);
 
-			// Print the char
-			std::cout << mBoard[i];
+
+				}
+				else if (mBoard[i] == '1')
+				{
+					SetConsoleTextAttribute(consoleHandle, 8 << 4);
+				}
+				else
+				{
+					// Restore b/w
+					SetConsoleTextAttribute(consoleHandle, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+				}
+
+				// Print the char
+				std::cout << mBoard[i];
+			}
+			// Restore b/w
+			SetConsoleTextAttribute(consoleHandle, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
+		}
+		
+
+	}
+	void PentominoBoard::printBoard() const
+	{
+
+		for (int row = 0; row < mHeight; row++)
+		{
+			printLine(row);
+			std::cout << "\n";
 		}
 		std::cout << "\n";
-		if (!containsNewLines)
-			removeNewLines();
-
 	}
 
 	// Insert padding to the board to keep new lines a fixed width apart
