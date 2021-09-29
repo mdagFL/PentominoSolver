@@ -34,9 +34,8 @@ namespace Pentominoes
 		bool tryPushPentomino(const Pentomino& piece, const Point& pos);
 		bool isPossibleSolution();
 		PlacedPentomino popPentomino(); 
-		void searchSimple(const Pentomino& piece, const Point& pos, int depth);
-		//void searchSimpleWithoutRepeats(const Pentomino& piece, const Point& pos, int depth);
-		//void searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth);
+		void searchSimpleWithoutRepeats(const Pentomino& piece, const Point& pos, int depth);
+		void searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth);
 		
 
 		

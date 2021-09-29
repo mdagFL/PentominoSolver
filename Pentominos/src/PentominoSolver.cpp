@@ -32,10 +32,16 @@ namespace Pentominoes
 			int y = startIndex / board.mWidth;
 			if (multithreading)
 			{
-				threads.emplace_back(std::thread(&PentominoSolver::searchSimple, PentominoSolver(solver), startPiece, Point(x, y), 0));
+				if (minimizeRepeats)
+					threads.emplace_back(std::thread(&PentominoSolver::searchSimpleWithoutRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
+				else
+					threads.emplace_back(std::thread(&PentominoSolver::searchSimpleWithRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
 			}
 			else
-				solver.searchSimple(startPiece, Point(x, y), 1);
+				if (minimizeRepeats)
+					solver.searchSimpleWithoutRepeats(startPiece, Point(x, y), 1);
+				else
+					solver.searchSimpleWithRepeats(startPiece, Point(x, y), 1);
 		}
 
 		for (int i = 0; i < threads.size(); i++)
@@ -52,16 +58,17 @@ namespace Pentominoes
 
 	void PentominoSolver::printSolutions()
 	{
-		CONSOLE_SCREEN_BUFFER_INFO csbi;
-		GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-		int consoleColumns { csbi.srWindow.Right - csbi.srWindow.Left + 1 };
-
-		int height{ solutionsFound->at(0).mBoard.mHeight };
-		int width{ solutionsFound->at(0).mBoard.mWidth };
-		int solutionsPerRow{consoleColumns / (width+1)};
+		
 
 		if (solutionsFound->size() > 0)
 		{
+			CONSOLE_SCREEN_BUFFER_INFO csbi;
+			GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+			int consoleColumns{ csbi.srWindow.Right - csbi.srWindow.Left + 1 };
+
+			int height{ solutionsFound->at(0).mBoard.mHeight };
+			int width{ solutionsFound->at(0).mBoard.mWidth };
+			int solutionsPerRow{ consoleColumns / (width + 1) };
 			
 			// Iterate through all solutions in batches of size solutionsPerRow
 			for (int i = 0; i < solutionsFound->size(); i+= solutionsPerRow)
@@ -212,7 +219,7 @@ namespace Pentominoes
 
 	// Recursive backtracking function to find and print all solutions
 	// Takes an initial piece and position to continue searching from.
-	void PentominoSolver::searchSimple(const Pentomino& piece, const Point& pos, int depth)
+	void PentominoSolver::searchSimpleWithoutRepeats(const Pentomino& piece, const Point& pos, int depth)
 	{
 		if (tryPushPentomino(piece, pos))
 		{
@@ -235,34 +242,72 @@ namespace Pentominoes
 			else if (isPossibleSolution())
 			{
 				// Next branches consist of all available fitting pieces in the next available spot		
-				if (mMinimizeRepeats)
-				{
-					if (checkNoPiecesAvailable())
-						resetAvailable();
+				if (checkNoPiecesAvailable())
+					resetAvailable();
 
-					for (int i = 0; i < Pentomino::cTotalOrientations; i++)
-					{
-						if (mPiecesAvailable[i])
-						{
-							Pentomino nextPiece(static_cast<PieceOrientation>(i));
-							int x{ nextZeroIndex % mBoard.mWidth };
-							int y{ nextZeroIndex / mBoard.mWidth };
-							Point nextPos(x - nextPiece.GetXOffset(), y); // 
-							searchSimple(nextPiece, nextPos, depth + 1);
-						}
-					}
-				}
-				
-				else
+				for (int i = 0; i < Pentomino::cTotalOrientations; i++)
 				{
-					for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+					if (mPiecesAvailable[i])
 					{
 						Pentomino nextPiece(static_cast<PieceOrientation>(i));
 						int x{ nextZeroIndex % mBoard.mWidth };
 						int y{ nextZeroIndex / mBoard.mWidth };
-						Point nextPos(x - nextPiece.GetXOffset(), y);
-						searchSimple(nextPiece, nextPos, depth + 1);
+						Point nextPos(x - nextPiece.GetXOffset(), y); // 
+						searchSimpleWithoutRepeats(nextPiece, nextPos, depth + 1);
 					}
+				}
+	
+				// All branches at this level explored, backtrack
+#if DEBUG_LEVEL > 1
+				std::cout << "All branches explored at depth = " << depth << "!\n";
+#endif
+				popPentomino();
+				return;
+			}
+			else
+			{
+				// Bad branch: cut it and backtrack
+#if DEBUG_LEVEL > 1
+				std::cout << "Bad branch cut!\n";
+#endif
+				popPentomino();
+				return;
+			}
+		}
+		else // Not a branch; piece doesn't fit in this spot
+			return;
+	}
+
+	void PentominoSolver::searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth)
+	{
+		if (tryPushPentomino(piece, pos))
+		{
+			// Find next zero, used to calculate where to place the next piece
+			int nextZeroIndex{ static_cast<int>(mBoard.mBoard.find('0')) };
+			if (nextZeroIndex == std::string::npos)
+			{
+
+				// Board is solved, add the solution
+				lock.lock();
+				solutionsFound->emplace_back(*this);
+				lock.unlock();
+#if DEBUG_LEVEL > 1
+				std::cout << "Solution found!\n";
+#endif
+				// Leaf node reached, backtrack
+				popPentomino();
+				return;
+			}
+			else if (isPossibleSolution())
+			{
+				// Next branches consist of all fitting pieces in the next available spot		
+				for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+				{
+					Pentomino nextPiece(static_cast<PieceOrientation>(i));
+					int x{ nextZeroIndex % mBoard.mWidth };
+					int y{ nextZeroIndex / mBoard.mWidth };
+					Point nextPos(x - nextPiece.GetXOffset(), y);
+					searchSimpleWithRepeats(nextPiece, nextPos, depth + 1);
 				}
 				// All branches at this level explored, backtrack
 #if DEBUG_LEVEL > 1

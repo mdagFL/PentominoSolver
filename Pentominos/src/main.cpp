@@ -22,7 +22,7 @@ int main()
 	*/
 	//Pentominoes::PentominoSolver::findAllSolutions(board);
 	//Pentominoes::PentominoSolver solver(board);
-	//Pentominoes::PentominoSolver::printSolutions();
+	Pentominoes::PentominoSolver::printSolutions();
 	
 }
 
