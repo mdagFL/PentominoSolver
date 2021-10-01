@@ -9,11 +9,16 @@
 
 int main()
 {
+
 	//Pentominoes::Pentomino::printAll();
+	std::vector<Pentominoes::Pentomino> vec;
+	std::cout << vec.max_size() << "\n";
 	Pentominoes::PentominoBoard board;
 	board.promptUserInputBoard();
 	
 	Pentominoes::PentominoSolver::findAllSolutions(board, false, true);
+
+	
 
 	/*
 	Pentominoes::PentominoSolver solver(board);

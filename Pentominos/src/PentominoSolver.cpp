@@ -32,14 +32,14 @@ namespace Pentominoes
 			int y = startIndex / board.mWidth;
 			if (multithreading)
 			{
-				if (minimizeRepeats)
-					threads.emplace_back(std::thread(&PentominoSolver::searchSimpleWithoutRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
+				if (minimizeRepeats && solver.checkPieceAvailable(startPiece))
+					threads.emplace_back(std::thread(&PentominoSolver::searchSimpleMinimizeRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
 				else
 					threads.emplace_back(std::thread(&PentominoSolver::searchSimpleWithRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
 			}
 			else
-				if (minimizeRepeats)
-					solver.searchSimpleWithoutRepeats(startPiece, Point(x, y), 1);
+				if (minimizeRepeats && solver.checkPieceAvailable(startPiece))
+					solver.searchSimpleMinimizeRepeats(startPiece, Point(x, y), 1);
 				else
 					solver.searchSimpleWithRepeats(startPiece, Point(x, y), 1);
 		}
@@ -101,7 +101,7 @@ namespace Pentominoes
 	{
 		if (mMinimizeRepeats)
 		{
-			mPiecesAvailable = new bool[Pentomino::cTotalOrientations];
+			mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
 			resetAvailable();
 		}
 	}
@@ -111,8 +111,8 @@ namespace Pentominoes
 	{
 		if (mMinimizeRepeats)
 		{
-			mPiecesAvailable = new bool[Pentomino::cTotalOrientations];
-			for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+			mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
+			for (int i = 0; i < Pentomino::cTotalBasePieces; i++)
 				mPiecesAvailable[i] = original.mPiecesAvailable[i];
 		}
 	}
@@ -175,7 +175,7 @@ namespace Pentominoes
 
 			// If minimizing repeats, mark this piece orientation as unavailable
 			if (mMinimizeRepeats)
-				mPiecesAvailable[static_cast<int>(piece)] = false;
+				setAvailable(piece, false);
 
 #if DEBUG_LEVEL > 1
 			std::cout << "Successfully placed piece " + piece.getLabelString() << " at (" << pos.x << ", " << pos.y << ")\n";
@@ -209,7 +209,7 @@ namespace Pentominoes
 		mBoard.replaceChars(mNextSymbol, '0');
 
 		if (mMinimizeRepeats)
-			mPiecesAvailable[static_cast<int>(piece.pentomino)] = true;
+			setAvailable(piece.pentomino, true);
 		
 		return piece;
 	}
@@ -219,7 +219,7 @@ namespace Pentominoes
 
 	// Recursive backtracking function to find and print all solutions
 	// Takes an initial piece and position to continue searching from.
-	void PentominoSolver::searchSimpleWithoutRepeats(const Pentomino& piece, const Point& pos, int depth)
+	void PentominoSolver::searchSimpleMinimizeRepeats(const Pentomino& piece, const Point& pos, int depth)
 	{
 		if (tryPushPentomino(piece, pos))
 		{
@@ -246,14 +246,14 @@ namespace Pentominoes
 					resetAvailable();
 
 				for (int i = 0; i < Pentomino::cTotalOrientations; i++)
-				{
-					if (mPiecesAvailable[i])
+				{	
+					Pentomino nextPiece(static_cast<PieceOrientation>(i));
+					if (checkPieceAvailable(nextPiece))
 					{
-						Pentomino nextPiece(static_cast<PieceOrientation>(i));
 						int x{ nextZeroIndex % mBoard.mWidth };
 						int y{ nextZeroIndex / mBoard.mWidth };
 						Point nextPos(x - nextPiece.GetXOffset(), y); // 
-						searchSimpleWithoutRepeats(nextPiece, nextPos, depth + 1);
+						searchSimpleMinimizeRepeats(nextPiece, nextPos, depth + 1);
 					}
 				}
 	
@@ -330,17 +330,25 @@ namespace Pentominoes
 			return;
 	}
 
+	
+
 	// Precondition: mMinimizeRepeats == true
 	void PentominoSolver::resetAvailable()
 	{
-		assert(mMinimizeRepeats == true);
-		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+		assert(mMinimizeRepeats);
+		for (int i = 0; i < Pentomino::cTotalBasePieces; i++)
 			mPiecesAvailable[i] = true;
 	}
 
+	// Precondition: mMinimizeRepeats == true
+	void PentominoSolver::setAvailable(const Pentomino& piece, bool available)
+	{
+		assert(mMinimizeRepeats);
+		mPiecesAvailable[static_cast<int>(piece.getBasePiece())] = available;
+	}
 	bool PentominoSolver::checkNoPiecesAvailable() const
 	{
-		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+		for (int i = 0; i < Pentomino::cTotalBasePieces; i++)
 		{
 			if (mPiecesAvailable[i])
 			{
@@ -348,6 +356,14 @@ namespace Pentominoes
 			}
 		}
 		return true;
+	}
+
+	// Precondition: minimizeRepeats == true
+	bool PentominoSolver::checkPieceAvailable(const Pentomino& piece) const
+	{
+		assert(mMinimizeRepeats == true);
+		OrientationBase base{ piece.getBasePiece() };
+		return (mPiecesAvailable[static_cast<int>(base)]);
 	}
 
 	bool PentominoSolver::isPossibleSolution()

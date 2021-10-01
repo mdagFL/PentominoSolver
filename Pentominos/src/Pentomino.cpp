@@ -58,4 +58,29 @@ namespace Pentominoes
 			next = str.find('\n');
 		}
 	}
+
+	OrientationBase Pentomino::getBasePiece() const
+	{
+		if (mOrientation == PieceOrientation::I0 || mOrientation == PieceOrientation::I1)
+			return OrientationBase::I;
+		else if (mOrientation == PieceOrientation::X0)
+			return OrientationBase::X;
+		else if (mOrientation < PieceOrientation::T0)
+		{
+			// This is a shortcut that works because of how the PieceOrientation values are organized.
+			// The first 40 orientations consist of groups of 8 orientations that map to one base piece
+			// and are sequenced in the same order as OrientationBase values.
+			int shifted = static_cast<int>(mOrientation) >> 3;
+			return static_cast<OrientationBase>(shifted);
+		}
+		else if (mOrientation < PieceOrientation::I0)
+		{
+			// Similar to the previous shortcut, but the remaining groups with 4 orientations
+			// only consist of 4 elements, so subtract 40 and shift by 2 instead of 3.
+			// Add 5 at the end, since the first 5 base pieces were covered by the previous block.
+			int shifted = (static_cast<int>(mOrientation) - 40) >> 2;
+			return static_cast<OrientationBase>(shifted + 5);
+		}
+	}
+
 }

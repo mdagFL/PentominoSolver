@@ -34,7 +34,7 @@ namespace Pentominoes
 		bool tryPushPentomino(const Pentomino& piece, const Point& pos);
 		bool isPossibleSolution();
 		PlacedPentomino popPentomino(); 
-		void searchSimpleWithoutRepeats(const Pentomino& piece, const Point& pos, int depth);
+		void searchSimpleMinimizeRepeats(const Pentomino& piece, const Point& pos, int depth);
 		void searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth);
 		
 
@@ -54,7 +54,10 @@ namespace Pentominoes
 		std::vector<int> findHoleAreas();
 		int findHoleArea(const Point& posHole);
 		void resetAvailable();
+		void setAvailable(const Pentomino& piece, bool available);
+			
 		bool checkNoPiecesAvailable() const;
+		bool checkPieceAvailable(const Pentomino& piece) const;
 		
 		
 		

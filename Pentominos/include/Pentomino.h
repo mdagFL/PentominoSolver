@@ -9,9 +9,9 @@ namespace Pentominoes
 	// M indicates that this is the reflection of the named piece
 	enum class PieceOrientation
 	{
-		F0,  F1,  F2,  F3,
+		F0,  F1,  F2,  F3, // 8x unique orientations
 		FM0, FM1, FM2, FM3,
-		L0,  L1,  L2,  L3,
+		L0,  L1,  L2,  L3, 
 		LM0, LM1, LM2, LM3,
 		N0,  N1,  N2,  N3,
 		NM0, NM1, NM2, NM3,
@@ -19,22 +19,39 @@ namespace Pentominoes
 		PM0, PM1, PM2, PM3,
 		Y0,  Y1,  Y2,  Y3,
 		YM0, YM1, YM2, YM3,
-		T0,  T1,  T2,  T3,
-		U0,  U1,  U2,  U3,
+		T0,  T1,  T2,  T3,  // 4x unique orientations
+		U0,  U1,  U2,  U3,	
 		V0,  V1,  V2,  V3,	
 		W0,  W1,  W2,  W3,
 		Z0,  Z1,
 		ZM0, ZM1,
-		I0,  I1,		
+		I0,  I1,			// < 4x unique orientations
 		X0
 	};
 
+	// Enum used to represent the 12 unique pentomino pieces
+	enum class OrientationBase
+	{
+		F,
+		L,
+		N,
+		P,
+		Y,
+		T,
+		U,
+		V,
+		W,
+		Z,
+		I,
+		X
+	};
 	
 
 	class Pentomino
 	{
 	public:
 		static constexpr int cTotalOrientations = 63;
+		static constexpr int cTotalBasePieces = 12;
 
 		Pentomino() = delete;
 		Pentomino(PieceOrientation piece);
@@ -48,6 +65,7 @@ namespace Pentominoes
 		const std::string& getDataString() const;
 		const std::string& getLabelString() const;
 		PieceOrientation getOrientation() const { return mOrientation; }
+		OrientationBase getBasePiece() const;
 
 		explicit operator int() const { return static_cast<int>(mOrientation); }
 
