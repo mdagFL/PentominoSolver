@@ -39,14 +39,15 @@ namespace Pentominoes
 		}
 		mStrWidth = mWidth + 1;
 #if DEBUG_LEVEL > 0
-		std::cout << "Entry after filtering 0s:\n";
-		printBoard();
 		std::cout << "mWidth: " << mWidth << "\n";
 		std::cout << "mHeight: " << mHeight << "\n";
 #endif
 		rectangularizeBoard();
 		trimBoard();
 		removeNewLines();
+		findSymmetry();
+
+
 	}
 	void PentominoBoard::printLine(int row) const
 	{
@@ -87,6 +88,8 @@ namespace Pentominoes
 		
 
 	}
+
+	// Precondition: rectangularizeBoard() has been called
 	void PentominoBoard::printBoard() const
 	{
 
@@ -266,6 +269,94 @@ namespace Pentominoes
 			nextCharIndex = static_cast<int>(mBoard.find(oldChar));
 		}
 	}
+
+	void PentominoBoard::findSymmetry()
+	{
+		// Set symmetry bits
+		if (checkHorizontalSymmetry())
+			mSymmetry |= cMaskSymmetryHorizontal;
+		if (checkVerticalSymmetry())
+			mSymmetry |= cMaskSymmetryVertical;
+		if (check90Symmetry())
+			mSymmetry |= cMaskSymmetry90;
+		if (check180Symmetry())
+			mSymmetry |= cMaskSymmetry180;
+
+#if DEBUG_LEVEL >0
+		
+		std::cout << "Horizontal symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetryHorizontal)) << "\n";
+		std::cout << "Vertical symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetryVertical)) << "\n";
+		std::cout << "90 symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetry90)) << "\n";
+		std::cout << "180 symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetry180)) << "\n";
+#endif
+	}
+
+	bool PentominoBoard::checkHorizontalSymmetry() const
+	{
+		if (mHeight == 1) // always horizontally symmetrical
+			return true;
+		for (int row = 0; row < mHeight / 2; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				// Check cell in upper half with corresponding lower half
+				int topIndex = row * mWidth + col;
+				int bottomIndex = mWidth*mHeight - ((row+1) * mWidth) + col;
+				if (mBoard[topIndex] != mBoard[bottomIndex])
+					return false;
+			}
+		}
+		return true;
+	}
+
+	bool PentominoBoard::checkVerticalSymmetry() const
+	{
+		if (mWidth == 1) // always horizontally symmetrical
+			return true;
+		for (int col = 0; col < mWidth / 2; col++)
+		{
+			for (int row = 0; row < mHeight; row++)
+			{
+				// Check cell in left half with corresponding right half
+				int leftIndex{ row * mWidth + col };
+				int rightIndex{ row * mWidth + (mWidth - (col+1)) };
+				if (mBoard[leftIndex] != mBoard[rightIndex])
+					return false;
+			}
+		}
+		return true;
+	}
+
+	bool PentominoBoard::check90Symmetry() const
+	{
+		if (mWidth != mHeight) // Must be a square board
+			return false;
+		for (int row = 0; row < mHeight; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				// Check each cell with its corresponding rotated counterpart
+				int index0{ row * mWidth + col };
+				int index90{ mWidth - (row+1) + col * mWidth }; // swap rows and columns, start with the right column
+				if (mBoard[index0] != mBoard[index90])
+					return false;
+			}
+		}
+		return true;
+	}
+
+	bool PentominoBoard::check180Symmetry() const
+	{
+		for (int i = 0; i < (mWidth*mHeight)/2; i++)
+		{
+			// Check each cell with the corresponding rotated counterpart
+			int index180 = (mWidth * mHeight - 1) - i; // 180 rotation is just scanning the board backwards
+			if (mBoard[i] != mBoard[index180])
+				return false;
+		}
+		return true;
+	}
+	
 
 	char PentominoBoard::operator[](int i) const
 	{
