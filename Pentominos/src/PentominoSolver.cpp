@@ -320,6 +320,8 @@ namespace Pentominoes
 	{
 		if (tryPushPentomino(piece, pos))
 		{
+
+
 			// Find next zero, used to calculate where to place the next piece
 			int nextZeroIndex{ static_cast<int>(mBoard.mBoard.find('0')) };
 			if (nextZeroIndex == std::string::npos)
@@ -342,16 +344,101 @@ namespace Pentominoes
 				if (checkNoPiecesAvailable())
 					resetAvailable();
 
-				for (int i = 0; i < Pentomino::cTotalOrientations; i++)
+				int nextOrientation = 0;
+				for (int base = 0; base < Pentomino::cTotalBasePieces; base++)
 				{	
-					Pentomino nextPiece(static_cast<PieceOrientation>(i));
-					if (checkPieceAvailable(nextPiece))
+					int orientations = Pentomino::getNumberOfOrientations(static_cast<OrientationBase>(base));
+					bool nextTrivialOmissions[8]{};
+
+					if (orientations == 8)
 					{
-						int x{ nextZeroIndex % mBoard.mWidth };
-						int y{ nextZeroIndex / mBoard.mWidth };
-						Point nextPos(x - nextPiece.getXOffset(), y); // 
-						searchSimpleMinimizeRepeats(nextPiece, nextPos, depth + 1);
+						if (mBoard.mSymmetry & (PentominoBoard::cMaskSymmetryHorizontal | PentominoBoard::cMaskSymmetryVertical))
+						{
+							// Omit reflections
+							nextTrivialOmissions[4] = true;
+							nextTrivialOmissions[5] = true;
+							nextTrivialOmissions[6] = true;
+							nextTrivialOmissions[7] = true;
+						}
+						if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry180)
+						{
+							// Omit 180 and 270 for regular and reflection
+							nextTrivialOmissions[2] = true;
+							nextTrivialOmissions[3] = true;
+							nextTrivialOmissions[6] = true;
+							nextTrivialOmissions[7] = true;
+						}
+						if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry90)
+						{
+							// Omit all but the base and its reflection
+							memset(nextTrivialOmissions, true, sizeof(bool) * 8); // set all to true
+							nextTrivialOmissions[0] = false;
+							nextTrivialOmissions[4] = false;
+						}
 					}
+					else if (orientations == 4)
+					{
+						memset(nextTrivialOmissions + 4, true, sizeof(bool) * 4);
+						if (static_cast<OrientationBase>(base) == OrientationBase::Z)
+						{
+							// Z has 2 reflections and 2 rotations, so must be handled separately
+							// The piece has 180 symmetry, so it makes no difference if the board also has 180 symmetry
+							if (mBoard.mSymmetry & (PentominoBoard::cMaskSymmetryHorizontal | PentominoBoard::cMaskSymmetryVertical))
+							{
+								// Omit reflections
+								nextTrivialOmissions[2] = true;
+								nextTrivialOmissions[3] = true;
+							}
+							if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry90)
+							{
+								// Omit all but the base and its reflection
+								nextTrivialOmissions[1] = true;
+								nextTrivialOmissions[3] = true;
+							}
+						}
+						else // All other 4 orientation bases have 4 rotations but no reflections
+						{
+							// These pieces have reflective symmetry, so it makes no difference if the board has reflective symmetry
+							if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry180)
+							{
+								// Omit 180 and 270 for regular and reflection
+								nextTrivialOmissions[2] = true;
+								nextTrivialOmissions[3] = true;
+							}
+							if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry90)
+							{
+								// Omit all but the base and its reflection
+								memset(nextTrivialOmissions + 1, true, sizeof(bool) * 3); // set 1-3 to true
+							}
+						}
+					}
+					else if (orientations == 2)
+					{
+						// I piece; only 90 rotations are meaningful
+						if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry90)
+						{
+							nextTrivialOmissions[1] = true;
+						}
+					}
+					else // X piece, only 1 orientation
+					{
+						// Set 1-7 to true
+						memset(nextTrivialOmissions + 1, true, sizeof(bool) * 7); //
+					}
+
+					for (int i = 0; i < orientations; i++)
+					{
+						Pentomino nextPiece(static_cast<PieceOrientation>(nextOrientation));
+						if (checkPieceAvailable(nextPiece) && !nextTrivialOmissions[i])
+						{
+							int x{ nextZeroIndex % mBoard.mWidth };
+							int y{ nextZeroIndex / mBoard.mWidth };
+							Point nextPos(x - nextPiece.getXOffset(), y); // 
+							searchSimpleMinimizeRepeats(nextPiece, nextPos, depth + 1);
+						}
+						nextOrientation++;
+					}
+					
 				}
 	
 				// All branches at this level explored, backtrack
