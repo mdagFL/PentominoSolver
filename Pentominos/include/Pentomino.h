@@ -9,7 +9,7 @@ namespace Pentominoes
 	// M indicates that this is the reflection of the named piece
 	enum class PieceOrientation
 	{
-		F0,  F1,  F2,  F3, // 8x unique orientations
+		F0,  F1,  F2,  F3, // 0-39: 8x unique orientations (4 rotations x 2 reflections)
 		FM0, FM1, FM2, FM3,
 		L0,  L1,  L2,  L3, 
 		LM0, LM1, LM2, LM3,
@@ -19,14 +19,14 @@ namespace Pentominoes
 		PM0, PM1, PM2, PM3,
 		Y0,  Y1,  Y2,  Y3,
 		YM0, YM1, YM2, YM3,
-		T0,  T1,  T2,  T3,  // 4x unique orientations
+		T0,  T1,  T2,  T3,  // 40-55: 4x unique orientations (4 rotations, no reflections)
 		U0,  U1,  U2,  U3,	
 		V0,  V1,  V2,  V3,	
 		W0,  W1,  W2,  W3,
-		Z0,  Z1,
+		Z0,  Z1,			// 56-59: 4x unique orientations (2 rotations x 2 reflections)
 		ZM0, ZM1,
-		I0,  I1,			// < 4x unique orientations
-		X0
+		I0,  I1,			// < 60-61: 2x unique orientations (2 rotations, no reflections)
+		X0					// 62: 1 unique orientation
 	};
 
 	// Enum used to represent the 12 unique pentomino pieces
@@ -53,20 +53,24 @@ namespace Pentominoes
 		static constexpr int cTotalOrientations = 63;
 		static constexpr int cTotalBasePieces = 12;
 
+
 		Pentomino() = delete;
 		Pentomino(PieceOrientation piece);
 
 		static void printAll();
 		static void removeNewLines(std::string& str); // questionable placement
 
-		int GetXOffset() const { return mXOffset; }
+		int getXOffset() const { return mXOffset; }
 		int getRectangleWidth() const { return mRectangleWidth; }
 		int getRectangleHeight() const { return mRectangleHeight; }
+		bool hasUniqueReflection() const;
 		const std::string& getDataString() const;
 		const std::string& getLabelString() const;
 		PieceOrientation getOrientation() const { return mOrientation; }
 		OrientationBase getBasePiece() const;
-
+		Pentomino getRotated90() const;
+		Pentomino getRotated180() const;
+		Pentomino getReflection() const;
 		explicit operator int() const { return static_cast<int>(mOrientation); }
 
 	private:

@@ -28,7 +28,7 @@ namespace Pentominoes
 		for (int i = 0; i < Pentomino::cTotalOrientations; i++)
 		{
 			Pentomino startPiece(static_cast<PieceOrientation>(i));
-			int x = startIndex % board.mWidth - startPiece.GetXOffset();
+			int x = startIndex % board.mWidth - startPiece.getXOffset();
 			int y = startIndex / board.mWidth;
 			if (multithreading)
 			{
@@ -252,7 +252,7 @@ namespace Pentominoes
 					{
 						int x{ nextZeroIndex % mBoard.mWidth };
 						int y{ nextZeroIndex / mBoard.mWidth };
-						Point nextPos(x - nextPiece.GetXOffset(), y); // 
+						Point nextPos(x - nextPiece.getXOffset(), y); // 
 						searchSimpleMinimizeRepeats(nextPiece, nextPos, depth + 1);
 					}
 				}
@@ -306,7 +306,7 @@ namespace Pentominoes
 					Pentomino nextPiece(static_cast<PieceOrientation>(i));
 					int x{ nextZeroIndex % mBoard.mWidth };
 					int y{ nextZeroIndex / mBoard.mWidth };
-					Point nextPos(x - nextPiece.GetXOffset(), y);
+					Point nextPos(x - nextPiece.getXOffset(), y);
 					searchSimpleWithRepeats(nextPiece, nextPos, depth + 1);
 				}
 				// All branches at this level explored, backtrack
