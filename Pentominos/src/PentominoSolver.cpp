@@ -87,7 +87,25 @@ namespace Pentominoes
 				}
 				else // All other 4 orientation bases have 4 rotations but no reflections
 				{
-					// These pieces have reflective symmetry, so it makes no difference if the board has reflective symmetry
+					// For these pieces, a certain reflection results in a particular rotation, which varies for each piece
+					// We want to omit the resultant rotations
+					if (static_cast<OrientationBase>(base) == OrientationBase::T 
+						|| static_cast<OrientationBase>(base) == OrientationBase::U)
+					{
+						// For T and U, a reflection results in either the same piece, or a 180 rotation.
+						nextTrivialOmissions[2] = true;
+					}
+					else if (static_cast<OrientationBase>(base) == OrientationBase::U)
+					{
+						
+					}
+					else if (static_cast<OrientationBase>(base) == OrientationBase::V)
+					{
+
+					}
+					else if (static_cast<OrientationBase>(base) == OrientationBase::W)
+					{
+					}
 					if (board.mSymmetry & PentominoBoard::cMaskSymmetry180)
 					{
 						// Omit 180 and 270 for regular and reflection
