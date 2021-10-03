@@ -25,7 +25,7 @@ namespace Pentominoes
 		W0,  W1,  W2,  W3,
 		Z0,  Z1,			// 56-59: 4x unique orientations (2 rotations x 2 reflections)
 		ZM0, ZM1,
-		I0,  I1,			// < 60-61: 2x unique orientations (2 rotations, no reflections)
+		I0,  I1,			// 60-61: 2x unique orientations (2 rotations, no reflections)
 		X0					// 62: 1 unique orientation
 	};
 
@@ -59,6 +59,8 @@ namespace Pentominoes
 
 		static void printAll();
 		static void removeNewLines(std::string& str); // questionable placement
+		static PieceOrientation getBaseOrientation(OrientationBase base);
+		static int getNumberOfOrientations(OrientationBase base);
 
 		int getXOffset() const { return mXOffset; }
 		int getRectangleWidth() const { return mRectangleWidth; }
@@ -71,6 +73,10 @@ namespace Pentominoes
 		Pentomino getRotated90() const;
 		Pentomino getRotated180() const;
 		Pentomino getReflection() const;
+
+		// Get the first PieceOrientation associated with this piece's base
+		PieceOrientation getBasePieceOrientation() const { return getBaseOrientation(getBasePiece()); }
+
 		explicit operator int() const { return static_cast<int>(mOrientation); }
 
 	private:

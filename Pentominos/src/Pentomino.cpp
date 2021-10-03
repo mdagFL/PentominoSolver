@@ -30,10 +30,55 @@ namespace Pentominoes
 		std::cout << "rectWidth: " << mRectangleWidth << "\n";
 		std::cout << "rectHeight: " << mRectangleHeight << "\n";
 		std::cout << "X offset: " << mXOffset << "\n";
+		std::cout << "Base PieceOrientation: " << Pentomino(getBasePieceOrientation()).getLabelString() << "\n";
 		std::cout << "Rotated 90: " << getRotated90().getLabelString() << "\n";
 		std::cout << "Roated 180: " << getRotated180().getLabelString() << "\n";
 		if (hasUniqueReflection())
 			std::cout << "Reflected: " << getReflection().getLabelString() << "\n";
+	}
+
+	// Gets the first PieceOrientation that corresponds with the given OrientationBase
+	PieceOrientation Pentomino::getBaseOrientation(OrientationBase base)
+	{
+		int baseInt{ static_cast<int>(base) };
+		if (base <= OrientationBase::Y)
+		{
+			baseInt *= 8; // Each base in this section has 8 orientations
+			return static_cast<PieceOrientation>(baseInt);
+		}
+		else if (base <= OrientationBase::W)
+		{
+			baseInt -= 5; // Offset relative to the first base with 4 orientations, T
+			baseInt *= 4; // Account for each of these orientations
+			baseInt += 40; // Add the 40 from the section with 8 orientations
+			return static_cast<PieceOrientation>(baseInt);
+		}
+		else if (base == OrientationBase::Z)
+		{
+			return PieceOrientation::Z0;
+		}
+		else if (base == OrientationBase::I)
+		{
+			return PieceOrientation::I0;
+		}
+		else // X	
+		{
+			return PieceOrientation::X0;
+		}
+			
+	}
+
+
+	int Pentomino::getNumberOfOrientations(OrientationBase base)
+	{
+		if (base <= OrientationBase::Y)
+			return 8;
+		else if (base <= OrientationBase::Z)
+			return 4;
+		else if (base == OrientationBase::I)
+			return 2;
+		else // I
+			return 1;
 	}
 
 	Pentomino::Pentomino(PieceOrientation piece)
