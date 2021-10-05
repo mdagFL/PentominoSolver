@@ -25,7 +25,7 @@ namespace Pentominoes
 		static std::chrono::duration<double> getDurationLastSolution()
 		{ return durationLastSolution; }
 		static void printSolutions();
-		
+		static void findTrivialOmissions(const OrientationBase& base, int boardSymmetry, bool outTrivialOmissions[8]);
 
 		PentominoSolver(const PentominoBoard& board, bool minimizeRepeats);
 		PentominoSolver(const PentominoSolver& original);
@@ -34,7 +34,7 @@ namespace Pentominoes
 		bool tryPushPentomino(const Pentomino& piece, const Point& pos);
 		bool isPossibleSolution();
 		PlacedPentomino popPentomino(); 
-		void searchSimpleMinimizeRepeats(const Pentomino& piece, const Point& pos, int depth);
+		void searchSimpleMinimizeRepeats(const Pentomino& piece, const Point& pos, int symmetry, int depth);
 		void searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth);
 		
 
@@ -55,6 +55,7 @@ namespace Pentominoes
 		int findHoleArea(const Point& posHole);
 		void resetAvailable();
 		void setAvailable(const Pentomino& piece, bool available);
+		
 			
 		bool checkNoPiecesAvailable() const;
 		bool checkPieceAvailable(const Pentomino& piece) const;
