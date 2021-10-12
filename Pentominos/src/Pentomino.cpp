@@ -33,31 +33,31 @@ namespace Pentominoes
 		std::cout << "Base PieceOrientation: " << Pentomino(getBasePieceOrientation()).getLabelString() << "\n";
 		std::cout << "Rotated 90: " << getRotated90().getLabelString() << "\n";
 		std::cout << "Roated 180: " << getRotated180().getLabelString() << "\n";
-		if (hasUniqueReflection())
-			std::cout << "Reflected: " << getReflection().getLabelString() << "\n";
+		std::cout << "Reflected over the vertical: " << getVerticalReflection().getLabelString() << "\n";
+		std::cout << "Reflected over the horizontal: " << getHorizontalReflection().getLabelString() << "\n";
 	}
 
 	// Gets the first PieceOrientation that corresponds with the given OrientationBase
-	PieceOrientation Pentomino::getBaseOrientation(OrientationBase base)
+	PieceOrientation Pentomino::getBaseOrientation(BasePiece base)
 	{
 		int baseInt{ static_cast<int>(base) };
-		if (base <= OrientationBase::Y)
+		if (base <= BasePiece::Y)
 		{
 			baseInt *= 8; // Each base in this section has 8 orientations
 			return static_cast<PieceOrientation>(baseInt);
 		}
-		else if (base <= OrientationBase::W)
+		else if (base <= BasePiece::W)
 		{
 			baseInt -= 5; // Offset relative to the first base with 4 orientations, T
 			baseInt *= 4; // Account for each of these orientations
 			baseInt += 40; // Add the 40 from the section with 8 orientations
 			return static_cast<PieceOrientation>(baseInt);
 		}
-		else if (base == OrientationBase::Z)
+		else if (base == BasePiece::Z)
 		{
 			return PieceOrientation::Z0;
 		}
-		else if (base == OrientationBase::I)
+		else if (base == BasePiece::I)
 		{
 			return PieceOrientation::I0;
 		}
@@ -69,13 +69,13 @@ namespace Pentominoes
 	}
 
 
-	int Pentomino::getNumberOfOrientations(OrientationBase base)
+	int Pentomino::getNumberOfOrientations(BasePiece base)
 	{
-		if (base <= OrientationBase::Y)
+		if (base <= BasePiece::Y)
 			return 8;
-		else if (base <= OrientationBase::Z)
+		else if (base <= BasePiece::Z)
 			return 4;
-		else if (base == OrientationBase::I)
+		else if (base == BasePiece::I)
 			return 2;
 		else // I
 			return 1;
@@ -113,19 +113,19 @@ namespace Pentominoes
 		}
 	}
 
-	OrientationBase Pentomino::getBasePiece() const
+	BasePiece Pentomino::getBase() const
 	{
 		if (mOrientation == PieceOrientation::I0 || mOrientation == PieceOrientation::I1)
-			return OrientationBase::I;
+			return BasePiece::I;
 		else if (mOrientation == PieceOrientation::X0)
-			return OrientationBase::X;
+			return BasePiece::X;
 		else if (mOrientation < PieceOrientation::T0)
 		{
 			// This is a shortcut that works because of how the PieceOrientation values are organized.
 			// The first 40 orientations consist of groups of 8 orientations that map to one base piece
 			// and are sequenced in the same order as OrientationBase values.
 			int shifted = static_cast<int>(mOrientation) >> 3;
-			return static_cast<OrientationBase>(shifted);
+			return static_cast<BasePiece>(shifted);
 		}
 		else if (mOrientation < PieceOrientation::I0)
 		{
@@ -133,7 +133,7 @@ namespace Pentominoes
 			// only consist of 4 elements, so subtract 40 and shift by 2 instead of 3.
 			// Add 5 at the end, since the first 5 base pieces were covered by the previous block.
 			int shifted = (static_cast<int>(mOrientation) - 40) >> 2;
-			return static_cast<OrientationBase>(shifted + 5);
+			return static_cast<BasePiece>(shifted + 5);
 		}
 	}
 
@@ -146,7 +146,7 @@ namespace Pentominoes
 			int rotation{ orientation % 4 };
 			rotation += 1;
 			rotation %= 4; // 270 -> 0
-			return Pentomino(static_cast<PieceOrientation>(base + rotation));
+			return Pentomino(base + rotation);
 		}
 		else if (orientation < 60) // Z piece
 		{
@@ -154,14 +154,14 @@ namespace Pentominoes
 			int rotation{ orientation % 2 };
 			rotation += 1;
 			rotation %= 2; // Only 2 rotations for Z/ZM
-			return Pentomino(static_cast<PieceOrientation>(base + rotation));
+			return Pentomino(base + rotation);
 		}
 		else if (orientation < 62) // I piece
 		{
 			if (orientation == 60)
-				return Pentomino(static_cast<PieceOrientation>(61));
+				return Pentomino(61);
 			else
-				return Pentomino(static_cast<PieceOrientation>(60));
+				return Pentomino(60);
 		}
 		else // X piece
 		{
@@ -174,32 +174,69 @@ namespace Pentominoes
 		return getRotated90().getRotated90();
 	}
 
-	// Precondition: hasUniqueReflection() == true
-	Pentomino Pentomino::getReflection() const
+	Pentomino Pentomino::getRotated270() const
 	{
+		return getRotated180().getRotated90();
+	}
+
+	// Precondition: hasUniqueReflection() == true
+	Pentomino Pentomino::getVerticalReflection() const
+	{
+		int orientation{ static_cast<int>(mOrientation) };
 		if (hasUniqueReflection())
-		{
-			int orientation = static_cast<int>(mOrientation);
+		{		
 			if (orientation < 40)
 			{
 				// Change will either be orientation + 4 or orientation - 4
-				bool isMirrored = static_cast<bool>((orientation >> 2) & 1);
+				bool isMirrored{ static_cast<bool>((orientation >> 2) & 1) };
 				if (isMirrored)
-					return Pentomino(static_cast<PieceOrientation>(orientation-4));
+					return Pentomino(orientation-4);
 				else
-					return Pentomino(static_cast<PieceOrientation>(orientation+4));
+					return Pentomino(orientation+4);
 			}
 			else // Z piece
 			{
 				// Change will either be orientation + 2 or orientation - 2
-				bool isMirrored = static_cast<bool>(orientation > 57);
+				bool isMirrored{ static_cast<bool>(orientation > 57) };
 				if (isMirrored)
-					return Pentomino(static_cast<PieceOrientation>(orientation - 2));
+					return Pentomino(orientation - 2);
 				else
-					return Pentomino(static_cast<PieceOrientation>(orientation + 2));
+					return Pentomino(orientation + 2);
 			}
 		}
-		return *this; // shouldn't happen
+		else
+		{
+			BasePiece base = getBase();
+			if (mOrientation < PieceOrientation::Z0)
+			{
+				// Piece with 4 unique rotations but no unique reflections
+				if (base == BasePiece::U || base == BasePiece::T)
+				{
+					if (orientation % 2 == 0)
+						return *this; // Vertical reflection doesn't change these
+					else
+						return getRotated180();
+				}
+				else
+				{
+					if (orientation % 2 == 0)
+						return getRotated270();
+					else
+						return getRotated90();
+				}
+			}
+			else if (getBase() == BasePiece::I || getBase() == BasePiece::X)
+			{
+				// Always the same piece
+				return *this;
+			}
+		}
+		
+	}
+
+	Pentomino Pentomino::getHorizontalReflection() const
+	{
+		return getVerticalReflection().getRotated180();
 	}
 
 	bool Pentomino::hasUniqueReflection() const

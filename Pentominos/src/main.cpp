@@ -16,6 +16,7 @@ int main()
 	Pentominoes::PentominoBoard board;
 	board.promptUserInputBoard();
 
+
 	Pentominoes::PentominoSolver::findAllSolutions(board, true, true);
 
 	
@@ -28,6 +29,8 @@ int main()
 	//Pentominoes::PentominoSolver::findAllSolutions(board);
 	//Pentominoes::PentominoSolver solver(board);
 	Pentominoes::PentominoSolver::printSolutions();
+
+
 	
 }
 

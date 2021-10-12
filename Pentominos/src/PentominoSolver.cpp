@@ -12,11 +12,12 @@ namespace Pentominoes
 	std::mutex PentominoSolver::lock{};
 	std::vector<PentominoSolver>* PentominoSolver::solutionsFound = new std::vector<PentominoSolver>;
 	std::chrono::duration<double> PentominoSolver::durationLastSolution{};
+	bool PentominoSolver::wasFirstPiecePlaced{ false };
 
 	// Takes a base piece and a bool array of size 8 and populates the bool array to correspond
 	// with which piece orientations can be omitted as branches in the initial search tree
 	// based on the symmetry of mBoard.
-	void PentominoSolver::findTrivialOmissions(const OrientationBase& base, int boardSymmetry, bool outTrivialOmissions[8])
+	void PentominoSolver::findTrivialOmissions(const BasePiece& base, int boardSymmetry, bool outTrivialOmissions[8])
 	{
 		// Some initial branches will be pruned to prevent trivial rotation/reflection solutions
 		// based on the board's symmetry.
@@ -25,7 +26,7 @@ namespace Pentominoes
 		// If a board has 180 degree symmetry, we will omit 180 and 270 degree rotations.
 		// If a board has 90 degree symmetry, we will omit all rotations.
 
-		int orientations = Pentomino::getNumberOfOrientations(static_cast<OrientationBase>(base));
+		int orientations = Pentomino::getNumberOfOrientations(static_cast<BasePiece>(base));
 
 		if (orientations == 8)
 		{
@@ -58,7 +59,7 @@ namespace Pentominoes
 		else if (orientations == 4)
 		{
 			memset(outTrivialOmissions + 4, true, sizeof(bool) * 4);
-			if (static_cast<OrientationBase>(base) == OrientationBase::Z)
+			if (static_cast<BasePiece>(base) == BasePiece::Z)
 			{
 				// Z has 2 reflections and 2 rotations, so must be handled separately
 				// The piece has 180 symmetry, so it makes no difference if the mBoard also has 180 symmetry
@@ -85,8 +86,8 @@ namespace Pentominoes
 
 				// However, a certain reflection results in a particular rotation, which varies somewhat
 				// We want to omit the resultant rotations
-				if (static_cast<OrientationBase>(base) == OrientationBase::T
-					|| static_cast<OrientationBase>(base) == OrientationBase::U)
+				if (static_cast<BasePiece>(base) == BasePiece::T
+					|| static_cast<BasePiece>(base) == BasePiece::U)
 				{
 					// For T and U, a reflection results in either the same piece, or a 180 rotation.
 					if (boardSymmetry & PentominoBoard::cMaskSymmetryVertical)
@@ -96,8 +97,8 @@ namespace Pentominoes
 					if (boardSymmetry & PentominoBoard::cMaskSymmetry90)
 						memset(outTrivialOmissions + 1, true, sizeof(bool) * 3);
 				}
-				else if (static_cast<OrientationBase>(base) == OrientationBase::V
-					|| static_cast<OrientationBase>(base) == OrientationBase::W)
+				else if (static_cast<BasePiece>(base) == BasePiece::V
+					|| static_cast<BasePiece>(base) == BasePiece::W)
 				{
 					// For V and W, a reflection results in either a 90 or 270 rotation.
 					// With both, all orientations can be made.
@@ -136,6 +137,15 @@ namespace Pentominoes
 		steady_clock::time_point begin(steady_clock::now());
 
 		PentominoSolver solver(board, minimizeRepeats);
+		std::cout << "0,0: " << solver.checkPointInFirstQuadrant(Point(0, 0)) << "\n";
+		std::cout << "1,1: " << solver.checkPointInFirstQuadrant(Point(1, 1)) << "\n";
+		std::cout << "2,2: " << solver.checkPointInFirstQuadrant(Point(2, 2)) << "\n";
+		std::cout << "3,3: " << solver.checkPointInFirstQuadrant(Point(3, 3)) << "\n";
+		std::cout << "7,1: " << solver.checkPointInFirstQuadrant(Point(7, 1)) << "\n";
+		std::cout << "8,1: " << solver.checkPointInFirstQuadrant(Point(8, 1)) << "\n";
+		std::cout << "9,2: " << solver.checkPointInFirstQuadrant(Point(9, 2)) << "\n";
+		std::cout << "10,3: " << solver.checkPointInFirstQuadrant(Point(10, 3)) << "\n";
+
 		//solutionsFound.reserve(board.mWidth * board.mHeight)
 		int startIndex{ static_cast<int>(board.mBoard.find('0')) };
 
@@ -145,14 +155,15 @@ namespace Pentominoes
 		{
 			// For the first placement, place only pieces that do not result in trivial solutions.
 			bool outTrivialOmissions[8]{};
-			int orientations = Pentomino::getNumberOfOrientations(static_cast<OrientationBase>(base));
+			int orientations = Pentomino::getNumberOfOrientations(static_cast<BasePiece>(base));
 			
-			solver.findTrivialOmissions(static_cast<OrientationBase>(base), solver.mBoard.mSymmetry, outTrivialOmissions);
+			solver.findTrivialOmissions(static_cast<BasePiece>(base), solver.mBoard.mSymmetry, outTrivialOmissions);
 
 			for (int i = 0; i < orientations; i++)
 			{
 				if (!outTrivialOmissions[i])
 				{
+
 					Pentomino startPiece(static_cast<PieceOrientation>(nextOrientation));
 					int x = startIndex % board.mWidth - startPiece.getXOffset();
 					int y = startIndex / board.mWidth;
@@ -346,15 +357,25 @@ namespace Pentominoes
 		return piece;
 	}
 
-	
-
-
 	// Recursive backtracking function to find and print all solutions
 	// Takes an initial piece and position to continue searching from.
 	void PentominoSolver::searchSimpleMinimizeRepeats(const Pentomino& piece, const Point& pos, int symmetry, int depth)
 	{
-		if (tryPushPentomino(piece, pos))
+		bool placed = tryPushPentomino(piece, pos);
+		if (placed)
 		{
+			lock.lock();
+			if (!wasFirstPiecePlaced)
+			{
+				// The first piece to be successfully placed from any branch will be used as an "anchor"
+				// for boards with rotational symmetries. The anchor must be placed in the
+				// top half / first quadrant for all branches to prevent trivial solutions.
+				wasFirstPiecePlaced = true;
+				//firstBase = piece.getBase();
+				firstBase = BasePiece::X;
+			}
+			lock.unlock();
+
 			// Find next zero, used to calculate where to place the next piece
 			int nextZeroIndex{ static_cast<int>(mBoard.mBoard.find('0')) };
 			if (nextZeroIndex == std::string::npos)
@@ -376,13 +397,15 @@ namespace Pentominoes
 				// Next branches consist of all available fitting pieces in the next available spot		
 				if (checkNoPiecesAvailable())
 					resetAvailable();
-				
+
 				// Cases where a trivial reflection/rotation of a board could result
 				// in pieces that are the same orientation in a trivial solution
 				// require some additional pruning at higher depth until a different
 				// piece is reached.
 				int nextSymmetry{ symmetry };
 				PieceOrientation lastOrientation = mPlacedPentominoes.back().pentomino.getOrientation();
+				nextSymmetry = PentominoBoard::cMaskSymmetryNone;
+				
 				if (nextSymmetry != PentominoBoard::cMaskSymmetryNone)
 				{
 					if (lastOrientation == PieceOrientation::U0
@@ -400,15 +423,38 @@ namespace Pentominoes
 					else
 						nextSymmetry = PentominoBoard::cMaskSymmetryNone;
 				}
-				//nextSymmetry |= (mBoard.mSymmetry & (mBoard.cMaskSymmetry180 | mBoard.cMaskSymmetry90));
+				
+				//nextSymmetry |= (mBoard.mSymmetry & (PentominoBoard::cMaskSymmetry180));
+
+					
 
 				int nextOrientation = 0;
+
+				int nextX{ nextZeroIndex % mBoard.mWidth };
+				int nextY{ nextZeroIndex / mBoard.mWidth };
+
+				
+				// Check if the anchor can no longer be placed where it must be placed
+				if (mBoard.mSymmetry & (PentominoBoard::cMaskSymmetry180 | PentominoBoard::cMaskSymmetry90)
+					&& checkPieceAvailable(Pentomino(Pentomino::getBaseOrientation(firstBase))) && nextY > mBoard.mHeight / 2)
+				{
+					// Bad branch: cut it and backtrack
+#if DEBUG_LEVEL > 1
+					std::cout << "Bad branch cut!\n";
+#endif
+					popPentomino();
+					return;
+				}
+				
+
 				for (int base = 0; base < Pentomino::cTotalBasePieces; base++)
 				{
-					int orientations = Pentomino::getNumberOfOrientations(static_cast<OrientationBase>(base));
+					int orientations = Pentomino::getNumberOfOrientations(static_cast<BasePiece>(base));
 					bool nextOmissions[8]{};
+					/*
 					if (nextSymmetry)
 						PentominoSolver::findTrivialOmissions(static_cast<OrientationBase>(base), nextSymmetry, nextOmissions);
+					*/
 					for (int i = 0; i < orientations; i++)
 					{
 						if (!nextOmissions[i])
@@ -416,9 +462,26 @@ namespace Pentominoes
 							Pentomino nextPiece(static_cast<PieceOrientation>(nextOrientation));
 							if (checkPieceAvailable(nextPiece))
 							{
-								int x{ nextZeroIndex % mBoard.mWidth };
-								int y{ nextZeroIndex / mBoard.mWidth };
-								Point nextPos(x - nextPiece.getXOffset(), y);
+								
+								Point nextPos(nextX - nextPiece.getXOffset(), nextY);
+								// If the board has rotational symmetries, need to check the anchor piece
+								
+								if (mBoard.mSymmetry && nextPiece.getBase() == firstBase)
+								{
+									// If trying to place the anchor piece outside of its respective area, skip it
+									Point centerOnBoard = Point(nextPiece.getCenter().x + nextPos.x, nextPiece.getCenter().y + nextPos.y);
+									if ((mBoard.mSymmetry == mBoard.cMaskSymmetry180)
+										&& !checkPointInTopHalf(centerOnBoard))
+										continue; 
+									else if (mBoard.mSymmetry != PentominoBoard::cMaskSymmetryHorizontal
+										&& mBoard.mSymmetry != PentominoBoard::cMaskSymmetryVertical
+										&& !checkPointInFirstQuadrant(centerOnBoard))
+									{
+										continue;
+									}
+										
+								}
+								
 								searchSimpleMinimizeRepeats(nextPiece, nextPos, nextSymmetry, depth + 1);
 							}
 							nextOrientation++;
@@ -450,7 +513,10 @@ namespace Pentominoes
 
 	void PentominoSolver::searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth)
 	{
-		if (tryPushPentomino(piece, pos))
+		lock.lock();
+		bool placed = tryPushPentomino(piece, pos);
+		lock.unlock();
+		if (placed)
 		{
 			// Find next zero, used to calculate where to place the next piece
 			int nextZeroIndex{ static_cast<int>(mBoard.mBoard.find('0')) };
@@ -500,8 +566,6 @@ namespace Pentominoes
 			return;
 	}
 
-	
-
 	// Precondition: mMinimizeRepeats == true
 	void PentominoSolver::resetAvailable()
 	{
@@ -514,8 +578,9 @@ namespace Pentominoes
 	void PentominoSolver::setAvailable(const Pentomino& piece, bool available)
 	{
 		assert(mMinimizeRepeats);
-		mPiecesAvailable[static_cast<int>(piece.getBasePiece())] = available;
+		mPiecesAvailable[static_cast<int>(piece.getBase())] = available;
 	}
+
 	bool PentominoSolver::checkNoPiecesAvailable() const
 	{
 		for (int i = 0; i < Pentomino::cTotalBasePieces; i++)
@@ -532,7 +597,7 @@ namespace Pentominoes
 	bool PentominoSolver::checkPieceAvailable(const Pentomino& piece) const
 	{
 		assert(mMinimizeRepeats == true);
-		OrientationBase base{ piece.getBasePiece() };
+		BasePiece base{ piece.getBase() };
 		return (mPiecesAvailable[static_cast<int>(base)]);
 	}
 
@@ -586,5 +651,16 @@ namespace Pentominoes
 			return 0;
 	}
 
-	
+	bool PentominoSolver::checkPointInFirstQuadrant(const Point& pos) const
+	{
+		return (pos.x < (mBoard.mWidth / 2) + (mBoard.mWidth % 2) 
+			&& pos.y < (mBoard.mHeight / 2) + (mBoard.mHeight % 2));
+	}
+
+	bool PentominoSolver::checkPointInTopHalf(const Point& pos) const
+	{
+		// If the board has an odd number of rows, want to include the left half of 
+		// the center row in the top
+		return (pos.y * mBoard.mWidth + pos.x < mBoard.mWidth* mBoard.mHeight / 2 + (mBoard.mHeight % 2));
+	}
 }

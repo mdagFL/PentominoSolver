@@ -1,9 +1,17 @@
+#pragma once
 #include <array>
 #include <string>
 
-#pragma once
 namespace Pentominoes
 {
+	struct Point
+	{
+		int x{ 0 };
+		int y{ 0 };
+		Point(int a_x, int a_y) : x{ a_x }, y{ a_y }
+		{}
+	};
+
 	// Enum for identifying all 63 unique pentomino orientations
 	// Number suffix denotes the number of 90 degree clockwise rotations applied
 	// M indicates that this is the reflection of the named piece
@@ -30,7 +38,7 @@ namespace Pentominoes
 	};
 
 	// Enum used to represent the 12 unique pentomino pieces
-	enum class OrientationBase
+	enum class BasePiece
 	{
 		F,
 		L,
@@ -56,26 +64,34 @@ namespace Pentominoes
 
 		Pentomino() = delete;
 		Pentomino(PieceOrientation piece);
+		Pentomino(int piece) : Pentomino(static_cast<PieceOrientation>(piece)) {}
+		Pentomino(BasePiece base) : Pentomino(getBaseOrientation(base)) {}
 
 		static void printAll();
 		static void removeNewLines(std::string& str); // questionable placement
-		static PieceOrientation getBaseOrientation(OrientationBase base);
-		static int getNumberOfOrientations(OrientationBase base);
+		static PieceOrientation getBaseOrientation(BasePiece base);
+		static int getNumberOfOrientations(BasePiece base);
 
 		int getXOffset() const { return mXOffset; }
 		int getRectangleWidth() const { return mRectangleWidth; }
 		int getRectangleHeight() const { return mRectangleHeight; }
+		Point getCenter() const
+		{ 
+			return Point(mRectangleWidth / 2, mRectangleHeight / 2); 
+		}
 		bool hasUniqueReflection() const;
 		const std::string& getDataString() const;
 		const std::string& getLabelString() const;
 		PieceOrientation getOrientation() const { return mOrientation; }
-		OrientationBase getBasePiece() const;
+		BasePiece getBase() const;
 		Pentomino getRotated90() const;
 		Pentomino getRotated180() const;
-		Pentomino getReflection() const;
+		Pentomino getRotated270() const;
+		Pentomino getVerticalReflection() const;
+		Pentomino getHorizontalReflection() const;
 
 		// Get the first PieceOrientation associated with this piece's base
-		PieceOrientation getBasePieceOrientation() const { return getBaseOrientation(getBasePiece()); }
+		PieceOrientation getBasePieceOrientation() const { return getBaseOrientation(getBase()); }
 
 		explicit operator int() const { return static_cast<int>(mOrientation); }
 

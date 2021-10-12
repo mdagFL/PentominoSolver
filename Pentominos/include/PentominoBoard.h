@@ -9,13 +9,7 @@
 
 namespace Pentominoes
 {
-	struct Point
-	{
-		int x{ 0 };
-		int y{ 0 };
-		Point(int a_x, int a_y) : x{ a_x }, y{ a_y }
-		{}
-	};
+	
 	
 
 	class PentominoBoard
