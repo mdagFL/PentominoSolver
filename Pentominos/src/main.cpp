@@ -17,7 +17,7 @@ int main()
 	board.promptUserInputBoard();
 
 
-	Pentominoes::PentominoSolver::findAllSolutions(board, true, true);
+	Pentominoes::PentominoSolver::findAllSolutions(board, true, false);
 
 	
 

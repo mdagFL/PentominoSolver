@@ -26,6 +26,7 @@ namespace Pentominoes
 		{ return durationLastSolution; }
 		static void printSolutions();
 		static void findTrivialOmissions(const BasePiece& base, int boardSymmetry, bool outTrivialOmissions[8]);
+		static void checkForTrivialSolutions();
 
 		PentominoSolver(const PentominoBoard& board, bool minimizeRepeats);
 		PentominoSolver(const PentominoSolver& original);

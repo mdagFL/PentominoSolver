@@ -28,6 +28,26 @@ namespace Pentominoes
 
 		int orientations = Pentomino::getNumberOfOrientations(static_cast<BasePiece>(base));
 
+		// Rotational symmetry will only matter here if there is also at least one reflective symmetry.
+		// This is because the only way to achieve a differently oriented piece in the top left
+		// corner of the board from an initial piece in the top left corner is to combine a 90
+		// rotation with a vertical reflection, or a 270 rotation with a horizontal reflection.
+		if (boardSymmetry & PentominoBoard::cMaskSymmetry90
+			&& (boardSymmetry & (PentominoBoard::cMaskSymmetryVertical | PentominoBoard::cMaskSymmetryHorizontal)))
+		{
+			int baseInt{ static_cast<int>(Pentomino::getBaseOrientation(base)) };
+			for (int i = 0; i < orientations / 2; i++)
+			{
+				int nextOrientation{ static_cast<int>(Pentomino::getBaseOrientation(base)) + i };
+				Pentomino nextPentomino(nextOrientation);
+				int omitted{ static_cast<int>(nextPentomino.getRotated90().getVerticalReflection().getOrientation()) };
+				// Note that rotating 270 and reflecting horizontal gives the same piece orientation, so it's not considered.
+				// If it results in the same piece, nothing should be omitted.
+				if (omitted != nextOrientation)
+					outTrivialOmissions[omitted - baseInt] = true;
+			}
+		}
+		/*
 		if (orientations == 8)
 		{
 			if (boardSymmetry & (PentominoBoard::cMaskSymmetryHorizontal | PentominoBoard::cMaskSymmetryVertical))
@@ -40,25 +60,9 @@ namespace Pentominoes
 				// If both symmetries, omit all but 2
 				memset(outTrivialOmissions + 2, true, sizeof(bool) * 6);
 			}
-			if (boardSymmetry & PentominoBoard::cMaskSymmetry180)
-			{
-				// Omit 180 and 270 for regular and reflection
-				outTrivialOmissions[2] = true;
-				outTrivialOmissions[3] = true;
-				outTrivialOmissions[6] = true;
-				outTrivialOmissions[7] = true;
-			}
-			if (boardSymmetry & PentominoBoard::cMaskSymmetry90)
-			{
-				// Omit all but the base and its reflection
-				memset(outTrivialOmissions + 1, true, sizeof(bool) * 3);
-				memset(outTrivialOmissions + 5, true, sizeof(bool) * 3);
-				
-			}
 		}
 		else if (orientations == 4)
 		{
-			memset(outTrivialOmissions + 4, true, sizeof(bool) * 4);
 			if (static_cast<BasePiece>(base) == BasePiece::Z)
 			{
 				// Z has 2 reflections and 2 rotations, so must be handled separately
@@ -67,12 +71,6 @@ namespace Pentominoes
 				{
 					// Omit reflections
 					outTrivialOmissions[2] = true;
-					outTrivialOmissions[3] = true;
-				}
-				if (boardSymmetry & PentominoBoard::cMaskSymmetry90)
-				{
-					// Omit all but the base and its reflection
-					outTrivialOmissions[1] = true;
 					outTrivialOmissions[3] = true;
 				}
 			}
@@ -94,8 +92,6 @@ namespace Pentominoes
 						outTrivialOmissions[3] = true;
 					if (boardSymmetry & PentominoBoard::cMaskSymmetryHorizontal)
 						outTrivialOmissions[2] = true;
-					if (boardSymmetry & PentominoBoard::cMaskSymmetry90)
-						memset(outTrivialOmissions + 1, true, sizeof(bool) * 3);
 				}
 				else if (static_cast<BasePiece>(base) == BasePiece::V
 					|| static_cast<BasePiece>(base) == BasePiece::W)
@@ -115,19 +111,7 @@ namespace Pentominoes
 				}
 			}
 		}
-		else if (orientations == 2)
-		{
-			// I piece; only 90 rotations are meaningful
-			if (boardSymmetry & PentominoBoard::cMaskSymmetry90)
-			{
-				outTrivialOmissions[1] = true;
-			}
-		}
-		else // X piece, only 1 orientation
-		{
-			// Set 1-7 to true
-			memset(outTrivialOmissions + 1, true, sizeof(bool) * 7); //
-		}
+		*/
 	}
 
 	void PentominoSolver::findAllSolutions(const PentominoBoard& board, bool minimizeRepeats, bool multithreading)
@@ -236,6 +220,11 @@ namespace Pentominoes
 			}
 		}
 		
+	}
+
+	void PentominoSolver::checkForTrivialSolutions()
+	{
+
 	}
 
 
@@ -423,7 +412,15 @@ namespace Pentominoes
 					else
 						nextSymmetry = PentominoBoard::cMaskSymmetryNone;
 				}
-				
+				if (mBoard.mSymmetry & PentominoBoard::cMaskSymmetry90
+					&& mBoard.mSymmetry & (PentominoBoard::cMaskSymmetryHorizontal | PentominoBoard::cMaskSymmetryVertical))
+				{
+					if (Pentomino(lastOrientation).getRotated90().getVerticalReflection().getOrientation() == lastOrientation)
+					{
+						// Restrict the next placed piece to avoid trivial solutions
+						nextSymmetry = mBoard.mSymmetry;
+					}
+				}
 				//nextSymmetry |= (mBoard.mSymmetry & (PentominoBoard::cMaskSymmetry180));
 
 					
@@ -451,10 +448,10 @@ namespace Pentominoes
 				{
 					int orientations = Pentomino::getNumberOfOrientations(static_cast<BasePiece>(base));
 					bool nextOmissions[8]{};
-					/*
+					
 					if (nextSymmetry)
-						PentominoSolver::findTrivialOmissions(static_cast<OrientationBase>(base), nextSymmetry, nextOmissions);
-					*/
+						PentominoSolver::findTrivialOmissions(static_cast<BasePiece>(base), nextSymmetry, nextOmissions);
+					
 					for (int i = 0; i < orientations; i++)
 					{
 						if (!nextOmissions[i])
