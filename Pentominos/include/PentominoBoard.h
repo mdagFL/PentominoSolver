@@ -34,10 +34,15 @@ namespace Pentominoes
 			: mBoard{ board } {  }
 
 		void promptUserInputBoard();
+		void reLetter(); // Set lettering of the board to be as it would be if it was a generated solution
 		void printBoard() const;
-		void printLine(int row) const;
+		void printLine(int row) const;	
 		int getWidth() const { return mWidth; }
 		int getHeight() const { return mHeight; }
+		PentominoBoard getRotated90() const;
+		PentominoBoard getRotated180() const;
+		PentominoBoard getVerticalReflection() const;
+		PentominoBoard getHorizontalReflection() const;
 
 	private:
 		static HANDLE consoleHandle;

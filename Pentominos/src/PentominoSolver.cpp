@@ -1,7 +1,7 @@
 #include <cassert>
 #include <iostream>
 #include <thread>
-
+#include <vector>
 
 #include "PentominoSolver.h"
 #include "Debug.h"
@@ -28,114 +28,28 @@ namespace Pentominoes
 		int nextOrientation = 0;
 		for (int base = 0; base < Pentomino::cTotalBasePieces; base++)
 		{
-			
-			// Some initial branches will be pruned to prevent trivial rotation/reflection solutions
-			// based on the board's symmetry.
 
-			// If a board has any reflective symmetry, we will omit reflections.
-			// If a board has 180 degree symmetry, we will omit 180 and 270 degree rotations.
-			// If a board has 90 degree symmetry, we will omit all rotations.
-
-			bool nextTrivialOmissions[8]{};
 			int orientations = Pentomino::getNumberOfOrientations(static_cast<OrientationBase>(base));
 			
-			if (orientations == 8)
-			{
-				if (board.mSymmetry & (PentominoBoard::cMaskSymmetryHorizontal | PentominoBoard::cMaskSymmetryVertical))
-				{
-					// Omit reflections
-					nextTrivialOmissions[4] = true;
-					nextTrivialOmissions[5] = true;
-					nextTrivialOmissions[6] = true;
-					nextTrivialOmissions[7] = true;
-				}
-				if (board.mSymmetry & PentominoBoard::cMaskSymmetry180)
-				{
-					// Omit 180 and 270 for regular and reflection
-					nextTrivialOmissions[2] = true;
-					nextTrivialOmissions[3] = true;
-					nextTrivialOmissions[6] = true;
-					nextTrivialOmissions[7] = true;
-				}
-				if (board.mSymmetry & PentominoBoard::cMaskSymmetry90)
-				{
-					// Omit all but the base and its reflection
-					memset(nextTrivialOmissions, true, sizeof(bool) * 8); // set all to true
-					nextTrivialOmissions[0] = false;
-					nextTrivialOmissions[4] = false;
-				}
-			}
-			else if (orientations == 4)
-			{
-				memset(nextTrivialOmissions + 4, true, sizeof(bool) * 4);
-				if (static_cast<OrientationBase>(base) == OrientationBase::Z)
-				{
-					// Z has 2 reflections and 2 rotations, so must be handled separately
-					// The piece has 180 symmetry, so it makes no difference if the board also has 180 symmetry
-					if (board.mSymmetry & (PentominoBoard::cMaskSymmetryHorizontal | PentominoBoard::cMaskSymmetryVertical))
-					{
-						// Omit reflections
-						nextTrivialOmissions[2] = true;
-						nextTrivialOmissions[3] = true;
-					}
-					if (board.mSymmetry & PentominoBoard::cMaskSymmetry90)
-					{
-						// Omit all but the base and its reflection
-						nextTrivialOmissions[1] = true;
-						nextTrivialOmissions[3] = true;
-					}
-				}
-				else // All other 4 orientation bases have 4 rotations but no reflections
-				{
-					// These pieces have reflective symmetry, so it makes no difference if the board has reflective symmetry
-					if (board.mSymmetry & PentominoBoard::cMaskSymmetry180)
-					{
-						// Omit 180 and 270 for regular and reflection
-						nextTrivialOmissions[2] = true;
-						nextTrivialOmissions[3] = true;
-					}
-					if (board.mSymmetry & PentominoBoard::cMaskSymmetry90)
-					{
-						// Omit all but the base and its reflection
-						memset(nextTrivialOmissions+1, true, sizeof(bool) * 3); // set 1-3 to true
-					}
-				}
-			}
-			else if (orientations == 2)
-			{
-				// I piece; only 90 rotations are meaningful
-				if (board.mSymmetry & PentominoBoard::cMaskSymmetry90)
-				{
-					nextTrivialOmissions[1] = true;
-				}
-			}
-			else // X piece, only 1 orientation
-			{
-				// Set 1-7 to true
-				memset(nextTrivialOmissions + 1, true, sizeof(bool) * 7); //
-			}
-
+		
 
 			for (int i = 0; i < orientations; i++)
 			{
-				if (!nextTrivialOmissions[i])
+				Pentomino startPiece(static_cast<PieceOrientation>(nextOrientation));
+				int x = startIndex % board.mWidth - startPiece.getXOffset();
+				int y = startIndex / board.mWidth;
+				if (multithreading)
 				{
-					Pentomino startPiece(static_cast<PieceOrientation>(nextOrientation));
-					int x = startIndex % board.mWidth - startPiece.getXOffset();
-					int y = startIndex / board.mWidth;
-					if (multithreading)
-					{
-						if (minimizeRepeats && solver.checkPieceAvailable(startPiece))
-							threads.emplace_back(std::thread(&PentominoSolver::searchSimpleMinimizeRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
-						else
-							threads.emplace_back(std::thread(&PentominoSolver::searchSimpleWithRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
-					}
+					if (minimizeRepeats && solver.checkPieceAvailable(startPiece))
+						threads.emplace_back(std::thread(&PentominoSolver::searchSimpleMinimizeRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
 					else
-						if (minimizeRepeats && solver.checkPieceAvailable(startPiece))
-							solver.searchSimpleMinimizeRepeats(startPiece, Point(x, y), 1);
-						else
-							solver.searchSimpleWithRepeats(startPiece, Point(x, y), 1);
+						threads.emplace_back(std::thread(&PentominoSolver::searchSimpleWithRepeats, PentominoSolver(solver), startPiece, Point(x, y), 0));
 				}
+				else
+					if (minimizeRepeats && solver.checkPieceAvailable(startPiece))
+						solver.searchSimpleMinimizeRepeats(startPiece, Point(x, y), 1);
+					else
+						solver.searchSimpleWithRepeats(startPiece, Point(x, y), 1);
 				nextOrientation++;
 			}
 			
@@ -153,10 +67,128 @@ namespace Pentominoes
 
 	}
 
-	void PentominoSolver::printSolutions()
+	// Precondition: findAllSolutions() has been called
+	void PentominoSolver::removeTrivialSolutions()
 	{
+
+
+		if (solutionsFound->size() > 0)
+		{
+			int numBoardOrientations{0};
+			int symmetry{ solutionsFound->at(0).mBoard.mSymmetry };
+			std::vector<int> transformationsTemplate{}; // Hold ints corresponding to the transformation function to be applied 
+			std::vector<PentominoBoard> transformations{};
+
+			// Array of 4 function pointers to transformation functions
+			// in order of corresponding bitmask starting with the LSB
+			PentominoBoard(PentominoBoard::*transformFuncs[4])() const
+			{
+				&PentominoBoard::getHorizontalReflection,
+				&PentominoBoard::getVerticalReflection,
+				&PentominoBoard::getRotated90,
+				&PentominoBoard::getRotated180
+			};
+			
+			// Number of unique board orientations to check
+			// = (2 ^ number of symmetries) - 1
+			int correspondingTransform{ 0 };
+
+			transformationsTemplate.push_back(-1); // -1 for the first index represents the original, untransformed solution.
+			while (symmetry)
+			{
+				if (symmetry % 2 != 0)
+				{
+					// Symmetry bit found, add corresponding transformations
+					// to the vector that will be searched against the solutions.
+					// Add 1 transformation for each transformation already in the list,
+					// + 1 for the original.
+					int numTransformationsAdding{ static_cast<int>(transformationsTemplate.size())};
+					for (int i = 0; i < numTransformationsAdding; i++)
+						transformationsTemplate.push_back(correspondingTransform);
+				}
+				symmetry >>= 1;
+				correspondingTransform++;
+			}
+
+			// For each solution, populate the transformations vector using the template vector
+			// Then check each item in that vector against all remaining solutions
+			// If there's a match, delete it from the solutions
+
+#if DEBUG_LEVEL>0
+			bool printed{}; // Only print the transformations once
+#endif
+			for (int i = 0; i < solutionsFound->size(); i++)
+			{
+				transformations.clear();
+				// For each of the different types of transformation functions:
+				int j = 0;
+				while (j < transformationsTemplate.size())
+				{
+					PentominoBoard transformation;
+					if (j == 0)
+					{
+						transformation = solutionsFound->at(i).mBoard;
+						transformations.push_back(transformation);
+						j++;
+						continue;
+					}
+					else
+					{
+						int prevSize = transformations.size();
+						// Apply the transformation to each existing transformation
+						for (int k = 0; k < prevSize; k++, j++)
+						{
+							transformation = transformations.at(k);
+							transformation = (transformation.*transformFuncs[transformationsTemplate[j]])();
+							transformation.reLetter(); // called so lettering matches actual found solutions
+							transformations.push_back(transformation);
+						}
+					}
+				}
+#if DEBUG_LEVEL > 0
+				if (!printed)
+				{
+					std::cout << "Transormations of 1st solution:\n";
+					for (PentominoBoard transform : transformations)
+						transform.printBoard();
+					printed = true;
+				}
+#endif
+
+
+				// Compare with each other solution
+				for (int j = i+1; j < solutionsFound->size(); j++)
+				{
+					for (int k = 0; k < transformations.size(); k++)
+					{
+						if (transformations[k].mBoard.compare(solutionsFound->at(j).mBoard.mBoard) == 0)
+						{
+							std::vector<PentominoSolver>::iterator it = solutionsFound->begin() + j;
+							// Match found, delete it and decrement j, since the solution vector size decreased
+							solutionsFound->erase(solutionsFound->begin() + j);
+							j--;
+							break;
+						}
+					}
+				}
+			}
+
+#if DEBUG_LEVEL > 0
+			std::cout << "Number of non-trivial solutions: " << solutionsFound->size() << "\n";
+#endif
+
+
+		}
+
+
 		
 
+
+
+	}
+
+	void PentominoSolver::printSolutions()
+	{
 		if (solutionsFound->size() > 0)
 		{
 			CONSOLE_SCREEN_BUFFER_INFO csbi;
@@ -204,9 +236,17 @@ namespace Pentominoes
 	}
 
 	PentominoSolver::PentominoSolver(const PentominoSolver& original)
-		: mBoard{ original.mBoard }, mMinimizeRepeats{ original.mMinimizeRepeats }, mPiecesAvailable{ nullptr }
+		: mBoard{ original.mBoard }, mMinimizeRepeats{ original.mMinimizeRepeats }
 	{
-		if (mMinimizeRepeats)
+#if DEBUG_LEVEL > 1
+		std::cout << "copy\n";
+#endif
+		if (mPiecesAvailable)
+		{
+			delete[] mPiecesAvailable;
+		}
+
+		if (original.mMinimizeRepeats)
 		{
 			mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
 			for (int i = 0; i < Pentomino::cTotalBasePieces; i++)
@@ -214,10 +254,66 @@ namespace Pentominoes
 		}
 	}
 
+	PentominoSolver::PentominoSolver(PentominoSolver&& original) noexcept
+		: mBoard{ original.mBoard }, mMinimizeRepeats{ original.mMinimizeRepeats }, mPiecesAvailable{ original.mPiecesAvailable },
+		mPlacedPentominoes{ original.mPlacedPentominoes }, mNextSymbol{ original.mNextSymbol }
+	{
+#if DEBUG_LEVEL > 1
+		std::cout << "move\n";
+#endif
+		original.mPiecesAvailable = nullptr;
+	}
+
+	PentominoSolver& PentominoSolver::operator=(const PentominoSolver& original)
+	{
+#if DEBUG_LEVEL > 1
+		std::cout << "copy_assi\n";
+#endif
+		// Check for self assignment
+		if (&original == this)
+			return *this;
+
+		// Deep copy mPiecesAvailable
+		if (mPiecesAvailable)
+			delete[] mPiecesAvailable;
+
+		mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
+		memcpy(mPiecesAvailable, original.mPiecesAvailable, sizeof(bool) * Pentomino::cTotalBasePieces);
+		
+		
+
+		return *this;
+	}
+
+	PentominoSolver& PentominoSolver::operator=(PentominoSolver&& original) noexcept
+	{
+#if DEBUG_LEVEL > 1
+		std::cout << "move_assi\n";
+#endif
+		if (&original == this)
+			return *this;
+
+		// Free any resources
+		if (mPiecesAvailable)
+			delete[] mPiecesAvailable;
+
+		// Shallow copy everything
+		mMinimizeRepeats = original.mMinimizeRepeats;
+		mBoard = original.mBoard;
+		mNextSymbol = original.mNextSymbol;
+		mPlacedPentominoes = original.mPlacedPentominoes;
+		mPiecesAvailable = original.mPiecesAvailable;
+		
+		// Nullify dangling pointer
+		original.mPiecesAvailable = nullptr;
+
+		return *this;
+	}
+
 	PentominoSolver::~PentominoSolver()
 	{		
-		if (mMinimizeRepeats)
-			delete[] mPiecesAvailable;;
+		if (mPiecesAvailable)
+			delete[] mPiecesAvailable;
 	}
 
 	// If legal placement, returns true and places the piece on the board.
@@ -258,9 +354,6 @@ namespace Pentominoes
 							boardStringCopy[boardPosIndex] = mNextSymbol;
 						}
 					}
-					
-					
-
 				}
 			}
 

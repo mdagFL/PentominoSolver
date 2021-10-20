@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <cassert>
+#include <map>
 
 #include "Debug.h"
 #include "PentominoBoard.h"
@@ -45,18 +46,19 @@ namespace Pentominoes
 		rectangularizeBoard();
 		trimBoard();
 		removeNewLines();
-		findSymmetry();
+		findSymmetry();     
 
 
 	}
+
 	void PentominoBoard::printLine(int row) const
 	{
 		int newLinesOffset{};
 		if (mBoard.find('\n') != std::string::npos)
 			newLinesOffset = 1;
-		if (row < mHeight) 
+		if (row < mHeight)
 		{
-			for (int i = row * (mWidth + newLinesOffset) ; i < row * (mWidth + newLinesOffset) + mWidth; i++)
+			for (int i = row * (mWidth + newLinesOffset); i < row * (mWidth + newLinesOffset) + mWidth; i++)
 			{
 				if (mBoard[i] >= 'A')
 				{
@@ -85,7 +87,7 @@ namespace Pentominoes
 			// Restore b/w
 			SetConsoleTextAttribute(consoleHandle, FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY);
 		}
-		
+
 
 	}
 
@@ -99,6 +101,31 @@ namespace Pentominoes
 			std::cout << "\n";
 		}
 		std::cout << "\n";
+	}
+
+	void PentominoBoard::reLetter()
+	{
+		std::map<char, char> charMap{}; // Will populate with chars on the board mapping to respective chars 
+		char next = 'A'; // Next char to map to
+
+		for (int i = 0; i < mBoard.size(); i++)
+		{
+			// 1s and 0s don't change
+			if (mBoard[i] != '1' && mBoard[i] != '0')
+			{
+				auto key{ charMap.find(mBoard[i]) };
+				if (key == charMap.end())
+				{
+					charMap[mBoard[i]] = next;
+					mBoard[i] = next;
+					next++;
+				}
+				else
+				{
+					mBoard[i] = charMap[mBoard[i]];
+				}
+			}			
+		}
 	}
 
 	// Insert padding to the board to keep new lines a fixed width apart
@@ -121,7 +148,7 @@ namespace Pentominoes
 			}
 			// insert padding if the new line character was reached 
 			// and we're not at the end of the line
-			if (newLineCharReached && i % mStrWidth < mWidth)
+			if (newLineCharReached&& i% mStrWidth < mWidth)
 				mBoard.insert(i, "1");
 		}
 #if DEBUG_LEVEL > 0
@@ -149,18 +176,18 @@ namespace Pentominoes
 		assert(col < mWidth);
 		--mWidth;
 		--mStrWidth;
-		
+
 		for (int i = 0; i < mHeight; i++)
 		{
 			mBoard.erase(i * mStrWidth + col, 1);
 		}
-		
-		
+
+
 #if DEBUG_LEVEL > 1
 		std::cout << "Removed column " << col << "\n";
 #endif
 	}
-	
+
 	// Remove any bordering rows or columns that are only 1s
 	void PentominoBoard::trimBoard()
 	{
@@ -173,7 +200,7 @@ namespace Pentominoes
 			foundZero = mBoard[i] == '0';
 			if (foundZero)
 				break;
-			if (i == mWidth-1) // no zero found in the row
+			if (i == mWidth - 1) // no zero found in the row
 			{
 				// Remove the row
 				removeRow(0);
@@ -189,10 +216,10 @@ namespace Pentominoes
 		foundZero = false;
 		while (!foundZero && !mBoard.empty())
 		{
-			foundZero = mBoard[i + mStrWidth * (mHeight-1)] == '0';
+			foundZero = mBoard[i + mStrWidth * (mHeight - 1)] == '0';
 			if (foundZero)
 				break;
-			if (i == mWidth-1) // no zero found in the row
+			if (i == mWidth - 1) // no zero found in the row
 			{
 				// Remove the row
 				removeRow(mHeight - 1);
@@ -210,7 +237,7 @@ namespace Pentominoes
 			foundZero = mBoard[mStrWidth * i] == '0';
 			if (foundZero)
 				break;
-			if (i == mHeight-1) // no zero found in the col
+			if (i == mHeight - 1) // no zero found in the col
 			{
 				// Remove the col
 				removeColumn(0);
@@ -225,13 +252,13 @@ namespace Pentominoes
 		foundZero = false;
 		while (!foundZero && !mBoard.empty())
 		{
-			foundZero = mBoard[i * mStrWidth + mWidth-1] == '0';
+			foundZero = mBoard[i * mStrWidth + mWidth - 1] == '0';
 			if (foundZero)
-				break;	
+				break;
 			if (i == mHeight - 1) // no zero found in the col
 			{
 				// Remove the col
-				removeColumn(mWidth-1);
+				removeColumn(mWidth - 1);
 				i = 0;
 				continue;
 			}
@@ -256,7 +283,7 @@ namespace Pentominoes
 	{
 		for (int row = 0; row < mHeight; row++)
 		{
-			mBoard.insert(mStrWidth*row + mWidth, "\n");
+			mBoard.insert(mStrWidth * row + mWidth, "\n");
 		}
 	}
 
@@ -274,16 +301,24 @@ namespace Pentominoes
 	{
 		// Set symmetry bits
 		if (checkHorizontalSymmetry())
+		{
 			mSymmetry |= cMaskSymmetryHorizontal;
+		}
 		if (checkVerticalSymmetry())
+		{
 			mSymmetry |= cMaskSymmetryVertical;
+		}
 		if (check90Symmetry())
+		{		
 			mSymmetry |= cMaskSymmetry90;
+		}
 		if (check180Symmetry())
+		{
 			mSymmetry |= cMaskSymmetry180;
+		}
 
 #if DEBUG_LEVEL >0
-		
+
 		std::cout << "Horizontal symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetryHorizontal)) << "\n";
 		std::cout << "Vertical symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetryVertical)) << "\n";
 		std::cout << "90 symmetry: " << static_cast<bool>((mSymmetry & cMaskSymmetry90)) << "\n";
@@ -301,7 +336,7 @@ namespace Pentominoes
 			{
 				// Check cell in upper half with corresponding lower half
 				int topIndex = row * mWidth + col;
-				int bottomIndex = mWidth*mHeight - ((row+1) * mWidth) + col;
+				int bottomIndex = mWidth * mHeight - ((row + 1) * mWidth) + col;
 				if (mBoard[topIndex] != mBoard[bottomIndex])
 					return false;
 			}
@@ -319,7 +354,7 @@ namespace Pentominoes
 			{
 				// Check cell in left half with corresponding right half
 				int leftIndex{ row * mWidth + col };
-				int rightIndex{ row * mWidth + (mWidth - (col+1)) };
+				int rightIndex{ row * mWidth + (mWidth - (col + 1)) };
 				if (mBoard[leftIndex] != mBoard[rightIndex])
 					return false;
 			}
@@ -337,7 +372,7 @@ namespace Pentominoes
 			{
 				// Check each cell with its corresponding rotated counterpart
 				int index0{ row * mWidth + col };
-				int index90{ mWidth - (row+1) + col * mWidth }; // swap rows and columns, start with the right column
+				int index90{ mWidth - (row + 1) + col * mWidth }; // swap rows and columns, start with the right column
 				if (mBoard[index0] != mBoard[index90])
 					return false;
 			}
@@ -347,7 +382,7 @@ namespace Pentominoes
 
 	bool PentominoBoard::check180Symmetry() const
 	{
-		for (int i = 0; i < (mWidth*mHeight)/2; i++)
+		for (int i = 0; i < (mWidth * mHeight) / 2; i++)
 		{
 			// Check each cell with the corresponding rotated counterpart
 			int index180 = (mWidth * mHeight - 1) - i; // 180 rotation is just scanning the board backwards
@@ -356,7 +391,77 @@ namespace Pentominoes
 		}
 		return true;
 	}
-	
+
+	// Precondition: New lines have been removed
+	// Precondition: Must be a square board
+	PentominoBoard PentominoBoard::getRotated90() const
+	{
+		PentominoBoard rotated{ *this };
+		rotated.mBoard.clear();
+		for (int row = 0; row < mHeight; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				int index90{ mWidth - (row + 1) + col * mWidth };
+				rotated.mBoard += mBoard[index90];
+			}
+		}
+		return rotated;
+	}
+
+	PentominoBoard PentominoBoard::getRotated180() const
+	{
+		PentominoBoard rotated{ *this };
+		rotated.mBoard.clear();
+
+		for (int i = 0; i < (mWidth * mHeight) ; i++)
+		{
+			// Check each cell with the corresponding rotated counterpart
+			int index180 = (mWidth * mHeight - 1) - i; // 180 rotation is just scanning the board backwards
+			rotated.mBoard += mBoard[index180];
+		}
+		return rotated;
+	}
+
+	PentominoBoard PentominoBoard::getHorizontalReflection() const
+	{
+		if (mHeight == 1) // Horizontal reflection is equivalent
+			return *this;
+
+		PentominoBoard reflected{ *this };
+		reflected.mBoard.clear();
+
+		for (int row = 0; row < mHeight; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				int bottomIndex = mWidth * mHeight - ((row + 1) * mWidth) + col;
+				reflected.mBoard += mBoard[bottomIndex];
+			}
+		}
+		return reflected;
+	}
+
+	PentominoBoard PentominoBoard::getVerticalReflection() const
+	{
+		if (mWidth == 1) // Vertical reflection is equivalent
+			return *this;
+
+		PentominoBoard reflected{ *this };
+		reflected.mBoard.clear();
+
+		
+		for (int row = 0; row < mHeight; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				int rightIndex{ row * mWidth + (mWidth - (col + 1)) };
+				reflected.mBoard += mBoard[rightIndex];
+			}
+		}
+		
+		return reflected;
+	}
 
 	char PentominoBoard::operator[](int i) const
 	{

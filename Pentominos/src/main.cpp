@@ -16,8 +16,12 @@ int main()
 	Pentominoes::PentominoBoard board;
 	board.promptUserInputBoard();
 
-	Pentominoes::PentominoSolver::findAllSolutions(board, true, true);
+	
 
+
+	Pentominoes::PentominoSolver::findAllSolutions(board, true, false);
+
+	Pentominoes::PentominoSolver::removeTrivialSolutions();
 	
 
 	/*

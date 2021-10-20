@@ -18,18 +18,25 @@ namespace Pentominoes
 			: pentomino{ a_pentomino }, position{ a_position }, symbol{ a_symbol } {}
 	};
 
-	class PentominoSolver 
+	class PentominoSolver
 	{
 	public:
 		static void findAllSolutions(const PentominoBoard& board, bool minimizeRepeats, bool multithreading = false);
 		static std::chrono::duration<double> getDurationLastSolution()
-		{ return durationLastSolution; }
+		{
+			return durationLastSolution;
+		}
 		static void printSolutions();
-		
+		static void removeTrivialSolutions();
+
 
 		PentominoSolver(const PentominoBoard& board, bool minimizeRepeats);
 		PentominoSolver(const PentominoSolver& original);
+		PentominoSolver(PentominoSolver&& original) noexcept;
 		~PentominoSolver();
+		
+		PentominoSolver& operator=(const PentominoSolver& original);
+		PentominoSolver& operator=(PentominoSolver&& original) noexcept;
 
 		bool tryPushPentomino(const Pentomino& piece, const Point& pos);
 		bool isPossibleSolution();
@@ -46,7 +53,7 @@ namespace Pentominoes
 		static std::mutex lock;
 
 		PentominoBoard mBoard{};
-		bool* mPiecesAvailable{}; // heap allocated bool array, only used when mMinimizeRepeats = true
+		bool* mPiecesAvailable{nullptr}; // heap allocated bool array, only used when mMinimizeRepeats = true
 		std::vector<PlacedPentomino> mPlacedPentominoes{};
 		bool mMinimizeRepeats{};
 		char mNextSymbol{ 'A' }; // 1-char symbol to represent each instance of a piece in the solution
