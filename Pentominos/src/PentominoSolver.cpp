@@ -129,7 +129,7 @@ namespace Pentominoes
 #endif
 
 			// Now iterate through the solutions, generate the transformations, and check against the remaining solutions.
-			for (int i = 0; i < solutionsFound->size(); i++)
+			for (int i = 0; i < solutionsFound->size() - 1; i++)
 			{
 				// Generate the transformations
 				std::vector<PentominoBoard> transformations{};
@@ -169,6 +169,7 @@ namespace Pentominoes
 							// Match found, remove from solutions
 							solutionsFound->erase(solutionsFound->begin() + j);
 							j--;
+							break;
 						}
 					}
 				}
