@@ -19,7 +19,7 @@ int main()
 	
 
 
-	Pentominoes::PentominoSolver::findAllSolutions(board, true, false);
+	Pentominoes::PentominoSolver::findAllSolutions(board, true, true);
 
 	Pentominoes::PentominoSolver::removeTrivialSolutions();
 	

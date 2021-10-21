@@ -34,15 +34,19 @@ namespace Pentominoes
 			: mBoard{ board } {  }
 
 		void promptUserInputBoard();
-		void reLetter(); // Set lettering of the board to be as it would be if it was a generated solution
+		// Set lettering of the board to be as it would be if it was a generated solution
+		void reLetter(); 
 		void printBoard() const;
-		void printLine(int row) const;	
+		void printLine(int row) const;
+		// Compare this board with another board, returns true if the other board is part of the same problem/solution set.
+		bool compareBoards(PentominoBoard board) const;
 		int getWidth() const { return mWidth; }
 		int getHeight() const { return mHeight; }
 		PentominoBoard getRotated90() const;
 		PentominoBoard getRotated180() const;
 		PentominoBoard getVerticalReflection() const;
 		PentominoBoard getHorizontalReflection() const;
+		PentominoBoard getAntidiagonalReflection() const;
 
 	private:
 		static HANDLE consoleHandle;

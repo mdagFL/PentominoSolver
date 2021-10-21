@@ -128,6 +128,25 @@ namespace Pentominoes
 		}
 	}
 
+	bool PentominoBoard::compareBoards(PentominoBoard board) const
+	{
+		if (board.mWidth != mWidth || board.mHeight != mHeight)
+			return false;
+		for (int row = 0; row < mHeight; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				char myVal = mBoard[row * mWidth + col];
+				char otherVal = board[row * mWidth + col];
+				if (myVal == '1' && otherVal != '1')
+				{
+					return false;
+				}
+			}
+		}
+		return true;
+	}
+
 	// Insert padding to the board to keep new lines a fixed width apart
 	void PentominoBoard::rectangularizeBoard()
 	{
@@ -460,6 +479,25 @@ namespace Pentominoes
 			}
 		}
 		
+		return reflected;
+	}
+
+	// Precondition: mHeight == mWidth
+	PentominoBoard PentominoBoard::getAntidiagonalReflection() const
+	{
+		assert(mHeight == mWidth);
+		PentominoBoard reflected{ *this };
+		reflected.mBoard.clear();
+
+		for (int row = 0; row < mHeight; row++)
+		{
+			for (int col = 0; col < mWidth; col++)
+			{
+				int reflectedIndex = (mWidth - 1 - col) * mWidth + row;
+				reflected.mBoard += mBoard[reflectedIndex];
+			}
+		}
+
 		return reflected;
 	}
 

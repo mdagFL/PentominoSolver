@@ -74,116 +74,111 @@ namespace Pentominoes
 
 		if (solutionsFound->size() > 0)
 		{
-			int numBoardOrientations{0};
-			int symmetry{ solutionsFound->at(0).mBoard.mSymmetry };
-			std::vector<int> transformationsTemplate{}; // Hold ints corresponding to the transformation function to be applied 
-			std::vector<PentominoBoard> transformations{};
+			PentominoBoard firstSolutionBoard = solutionsFound->at(0).mBoard;
+			int symmetry = firstSolutionBoard.mSymmetry;
+			int numBoardOrientations{ 0 };
+			bool isSquare = firstSolutionBoard.mWidth == firstSolutionBoard.mHeight;
 
-			// Array of 4 function pointers to transformation functions
-			// in order of corresponding bitmask starting with the LSB
-			PentominoBoard(PentominoBoard::*transformFuncs[4])() const
+			// Vector of vectors of function pointers. Each item corresponds with a transformation
+			// created by calling the sequence of PentominoBoard member functions.
+			std::vector<std::vector<PentominoBoard(PentominoBoard::*)() const>> transformFuncSequences
 			{
-				&PentominoBoard::getHorizontalReflection,
-				&PentominoBoard::getVerticalReflection,
-				&PentominoBoard::getRotated90,
-				&PentominoBoard::getRotated180
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getRotated90 },
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getRotated180 },
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getRotated180, &PentominoBoard::getRotated90 },
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getHorizontalReflection },
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getHorizontalReflection, &PentominoBoard::getRotated90 },
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getHorizontalReflection, &PentominoBoard::getRotated180 },
+				std::vector<PentominoBoard(PentominoBoard::*)() const> {&PentominoBoard::getHorizontalReflection, &PentominoBoard::getRotated180,
+					&PentominoBoard::getRotated90}
 			};
-			
-			// Number of unique board orientations to check
-			// = (2 ^ number of symmetries) - 1
-			int correspondingTransform{ 0 };
+			// Array of bools will correspond with each sequence in transformFuncSequences
+			// These two structures will serve as a pattern to generate all the relevant
+			// transformations for this solution set.
+			bool uniqueTransformations[7]{};
 
-			transformationsTemplate.push_back(-1); // -1 for the first index represents the original, untransformed solution.
-			while (symmetry)
+			if (!isSquare)
 			{
-				if (symmetry % 2 != 0)
+				// Simple to define for non-square boards
+				if (symmetry & PentominoBoard::cMaskSymmetry180)
+					uniqueTransformations[1] = true;
+				if (symmetry & PentominoBoard::cMaskSymmetryHorizontal)
+					uniqueTransformations[3] = true;
+				if (symmetry & PentominoBoard::cMaskSymmetryVertical)
+					uniqueTransformations[5] = true;				
+			}
+			else
+			{
+				// Less simple, so try each transformation and check if the board is still in the solution set
+				for (int i = 0; i < 7; i++)
 				{
-					// Symmetry bit found, add corresponding transformations
-					// to the vector that will be searched against the solutions.
-					// Add 1 transformation for each transformation already in the list,
-					// + 1 for the original.
-					int numTransformationsAdding{ static_cast<int>(transformationsTemplate.size())};
-					for (int i = 0; i < numTransformationsAdding; i++)
-						transformationsTemplate.push_back(correspondingTransform);
+					PentominoBoard transform{ firstSolutionBoard };
+					for (int j = 0; j < transformFuncSequences[i].size(); j++)
+					{
+						auto func = transformFuncSequences[i][j];
+						transform = (transform.*func)();
+					}
+					if (firstSolutionBoard.compareBoards(transform))
+						uniqueTransformations[i] = true;
+					
 				}
-				symmetry >>= 1;
-				correspondingTransform++;
 			}
 
-			// For each solution, populate the transformations vector using the template vector
-			// Then check each item in that vector against all remaining solutions
-			// If there's a match, delete it from the solutions
-
-#if DEBUG_LEVEL>0
-			bool printed{}; // Only print the transformations once
+#if DEBUG_LEVEL > 0
+			bool printed{ false };
 #endif
+
+			// Now iterate through the solutions, generate the transformations, and check against the remaining solutions.
 			for (int i = 0; i < solutionsFound->size(); i++)
 			{
-				transformations.clear();
-				// For each of the different types of transformation functions:
-				int j = 0;
-				while (j < transformationsTemplate.size())
+				// Generate the transformations
+				std::vector<PentominoBoard> transformations{};
+				for (int j = 0; j < 7; j++)
 				{
-					PentominoBoard transformation;
-					if (j == 0)
+					if (uniqueTransformations[j])
 					{
-						transformation = solutionsFound->at(i).mBoard;
-						transformations.push_back(transformation);
-						j++;
-						continue;
-					}
-					else
-					{
-						int prevSize = transformations.size();
-						// Apply the transformation to each existing transformation
-						for (int k = 0; k < prevSize; k++, j++)
+						PentominoBoard transform{ solutionsFound->at(i).mBoard };
+						for (int k = 0; k < transformFuncSequences[j].size(); k++)
 						{
-							transformation = transformations.at(k);
-							transformation = (transformation.*transformFuncs[transformationsTemplate[j]])();
-							transformation.reLetter(); // called so lettering matches actual found solutions
-							transformations.push_back(transformation);
+							auto func = transformFuncSequences[j][k];
+							transform = (transform.*func)();
 						}
+						transform.reLetter();
+						transformations.push_back(transform);
 					}
 				}
+
 #if DEBUG_LEVEL > 0
 				if (!printed)
 				{
-					std::cout << "Transormations of 1st solution:\n";
-					for (PentominoBoard transform : transformations)
-						transform.printBoard();
+					std::cout << "Unique transformations of solutionsFound[0]:\n";
+					for (int j = 0; j < transformations.size(); j++)
+					{
+						transformations[j].printBoard();
+					}
 					printed = true;
 				}
 #endif
 
-
-				// Compare with each other solution
-				for (int j = i+1; j < solutionsFound->size(); j++)
+				for (int j = i + 1; j < solutionsFound->size(); j++)
 				{
 					for (int k = 0; k < transformations.size(); k++)
 					{
-						if (transformations[k].mBoard.compare(solutionsFound->at(j).mBoard.mBoard) == 0)
+						if (solutionsFound->at(j).mBoard.mBoard.compare(transformations[k].mBoard) == 0)
 						{
-							std::vector<PentominoSolver>::iterator it = solutionsFound->begin() + j;
-							// Match found, delete it and decrement j, since the solution vector size decreased
+							// Match found, remove from solutions
 							solutionsFound->erase(solutionsFound->begin() + j);
 							j--;
-							break;
 						}
 					}
 				}
+
 			}
 
 #if DEBUG_LEVEL > 0
 			std::cout << "Number of non-trivial solutions: " << solutionsFound->size() << "\n";
 #endif
-
-
 		}
-
-
-		
-
-
 
 	}
 
