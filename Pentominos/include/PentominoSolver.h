@@ -21,7 +21,7 @@ namespace Pentominoes
 	class PentominoSolver
 	{
 	public:
-		static void findAllSolutions(const PentominoBoard& board, bool minimizeRepeats, bool multithreading = false);
+		static void beginSearch(const PentominoBoard& board, bool minimizeRepeats, bool multithreading = false);
 		static std::chrono::duration<double> getDurationLastSolution()
 		{
 			return durationLastSolution;
@@ -30,7 +30,7 @@ namespace Pentominoes
 		static void removeTrivialSolutions();
 
 
-		PentominoSolver(const PentominoBoard& board, bool minimizeRepeats);
+		PentominoSolver(const PentominoBoard& board, bool minimizeRepeats, bool multithreading);
 		PentominoSolver(const PentominoSolver& original);
 		PentominoSolver(PentominoSolver&& original) noexcept;
 		~PentominoSolver();
@@ -41,7 +41,7 @@ namespace Pentominoes
 		bool tryPushPentomino(const Pentomino& piece, const Point& pos);
 		bool isPossibleSolution();
 		PlacedPentomino popPentomino(); 
-		void searchSimpleMinimizeRepeats(const Pentomino& piece, const Point& pos, int depth);
+		void solveBacktracking(int depth);
 		void searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth);
 		
 
@@ -51,8 +51,10 @@ namespace Pentominoes
 		static std::chrono::duration<double> durationLastSolution;
 		static std::vector<PentominoSolver>* solutionsFound;
 		static std::mutex lock;
+		static std::vector<std::thread> threads;
 
 		PentominoBoard mBoard{};
+		bool mMultithreading{};
 		bool* mPiecesAvailable{nullptr}; // heap allocated bool array, only used when mMinimizeRepeats = true
 		std::vector<PlacedPentomino> mPlacedPentominoes{};
 		bool mMinimizeRepeats{};
