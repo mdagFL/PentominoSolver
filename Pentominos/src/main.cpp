@@ -1,15 +1,13 @@
 #include <iostream>
 #include <string>
-
-#include "Pentomino.h"
-#include "PentominoBoard.h"
-#include "PentominoSolver.h"
+#include "UserMenu.h"
 
 
 
 int main()
 {
-
+	Pentominoes::UserMenu::BeginMainLoop();
+	/*
 	Pentominoes::Pentomino::printAll();
 	std::vector<Pentominoes::Pentomino> vec;
 	std::cout << vec.max_size() << "\n";
@@ -23,15 +21,9 @@ int main()
 
 	Pentominoes::PentominoSolver::removeTrivialSolutions();
 	
-
-	/*
-	Pentominoes::PentominoSolver solver(board);
-	Pentominoes::Pentomino v0(Pentominoes::PieceOrientation::V0);
-	solver.tryPushPentomino(Pentominoes::PieceOrientation::V0, Pentominoes::Point(-v0.GetXOffset(), 0));
-	*/
 	//Pentominoes::PentominoSolver::findAllSolutions(board);
 	//Pentominoes::PentominoSolver solver(board);
-	Pentominoes::PentominoSolver::printSolutions();
-	
+	Pentominoes::PentominoSolver::printSolutions()
+	*/	
 }
 

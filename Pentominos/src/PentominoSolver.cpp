@@ -27,6 +27,8 @@ namespace Pentominoes
 		int startIndex{ static_cast<int>(board.mBoard.find('0')) };
 		int nextOrientation = 0;
 
+		std::cout << "Finding solutions. This may take a while...";
+
 		solver.solveBacktracking(0);
 		
 		if (multithreading)
@@ -38,7 +40,8 @@ namespace Pentominoes
 			threads.clear();
 		}
 		
-		std::cout << "\nTotal solutions: " << solutionsFound->size() << "\n";
+		std::cout << "Done\n";
+		std::cout << "\nTotal solutions (including trivial solutions): " << solutionsFound->size() << "\n";
 		steady_clock::time_point end(steady_clock::now());
 		durationLastSolution = std::chrono::duration_cast<std::chrono::duration<double >> (end - begin);
 		std::cout << "Time elapsed: " << durationLastSolution.count() << "\n";
@@ -49,6 +52,7 @@ namespace Pentominoes
 	void PentominoSolver::removeTrivialSolutions()
 	{
 
+		std::cout << "Removing trivial solutions...";
 
 		if (solutionsFound->size() > 0)
 		{
@@ -153,9 +157,9 @@ namespace Pentominoes
 				}
 
 			}
-			std::cout << "Number of non-trivial solutions: " << solutionsFound->size() << "\n";
 		}
-
+		std::cout << "Done\n";
+		std::cout << "Number of non-trivial solutions: " << solutionsFound->size() << "\n";
 	}
 
 	void PentominoSolver::printSolutions()

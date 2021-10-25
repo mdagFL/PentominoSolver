@@ -148,6 +148,7 @@
     <ClInclude Include="include\Pentomino.h" />
     <ClInclude Include="include\PentominoBoard.h" />
     <ClInclude Include="include\PentominoSolver.h" />
+    <ClInclude Include="include\UserMenu.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\PentominoData.h" />
@@ -155,6 +156,7 @@
     <ClCompile Include="src\Pentomino.cpp" />
     <ClCompile Include="src\PentominoBoard.cpp" />
     <ClCompile Include="src\PentominoSolver.cpp" />
+    <ClCompile Include="src\UserMenu.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

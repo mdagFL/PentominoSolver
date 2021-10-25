@@ -28,6 +28,7 @@ namespace Pentominoes
 		}
 		static void printSolutions();
 		static void removeTrivialSolutions();
+		static int getNumSolutionsFound() {return (solutionsFound )? solutionsFound->size() : 0; }
 
 
 		PentominoSolver(const PentominoBoard& board, bool minimizeRepeats, bool multithreading);
