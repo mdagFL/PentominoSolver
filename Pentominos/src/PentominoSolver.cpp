@@ -213,11 +213,6 @@ namespace Pentominoes
 #if DEBUG_LEVEL > 1
 		std::cout << "copy\n";
 #endif
-		if (mPiecesAvailable)
-		{
-			delete[] mPiecesAvailable;
-		}
-
 		if (original.mMinimizeRepeats)
 		{
 			mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
@@ -246,10 +241,9 @@ namespace Pentominoes
 			return *this;
 
 		// Deep copy mPiecesAvailable
-		if (mPiecesAvailable)
-			delete[] mPiecesAvailable;
 
-		mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
+		if (!mPiecesAvailable)
+			mPiecesAvailable = new bool[Pentomino::cTotalBasePieces];
 		memcpy(mPiecesAvailable, original.mPiecesAvailable, sizeof(bool) * Pentomino::cTotalBasePieces);
 		
 		
