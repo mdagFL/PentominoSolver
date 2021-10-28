@@ -43,7 +43,6 @@ namespace Pentominoes
 		bool isPossibleSolution();
 		PlacedPentomino popPentomino(); 
 		void solveBacktracking(int depth);
-		void searchSimpleWithRepeats(const Pentomino& piece, const Point& pos, int depth);
 		
 
 		

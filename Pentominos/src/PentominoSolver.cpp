@@ -48,7 +48,7 @@ namespace Pentominoes
 
 	}
 
-	// Precondition: findAllSolutions() has been called
+	// Precondition: beginSearch() has been called
 	void PentominoSolver::removeTrivialSolutions()
 	{
 
@@ -215,7 +215,7 @@ namespace Pentominoes
 		mNextSymbol{ original.mNextSymbol }, mPiecesAvailable{ original.mPiecesAvailable }
 	{
 #if DEBUG_LEVEL > 1
-		std::cout << "copy\n";
+		std::cout << "PentominoSolver: copy\n";
 #endif
 		if (original.mMinimizeRepeats)
 		{
@@ -230,7 +230,7 @@ namespace Pentominoes
 		mPlacedPentominoes{ original.mPlacedPentominoes }, mNextSymbol{ original.mNextSymbol }
 	{
 #if DEBUG_LEVEL > 1
-		std::cout << "move\n";
+		std::cout << "PentominoSolver: move\n";
 #endif
 		original.mPiecesAvailable = nullptr;
 	}
@@ -238,7 +238,7 @@ namespace Pentominoes
 	PentominoSolver& PentominoSolver::operator=(const PentominoSolver& original)
 	{
 #if DEBUG_LEVEL > 1
-		std::cout << "copy_assi\n";
+		std::cout << "PentominoSolver: copy assignment\n";
 #endif
 		// Check for self assignment
 		if (&original == this)
@@ -258,7 +258,7 @@ namespace Pentominoes
 	PentominoSolver& PentominoSolver::operator=(PentominoSolver&& original) noexcept
 	{
 #if DEBUG_LEVEL > 1
-		std::cout << "move_assi\n";
+		std::cout << "PentominoSolver: move assignment\n";
 #endif
 		if (&original == this)
 			return *this;
@@ -467,7 +467,7 @@ namespace Pentominoes
 		return true;
 	}
 
-	// Precondition: minimizeRepeats == true
+	// Precondition: mMinimizeRepeats == true
 	bool PentominoSolver::checkPieceAvailable(const Pentomino& piece) const
 	{
 		assert(mMinimizeRepeats == true);
@@ -475,6 +475,7 @@ namespace Pentominoes
 		return (mPiecesAvailable[static_cast<int>(base)]);
 	}
 
+	// Returns false if there exists any island of the board with an area not divisible by 5
 	bool PentominoSolver::isPossibleSolution()
 	{
 		std::vector<int> areas(findHoleAreas());

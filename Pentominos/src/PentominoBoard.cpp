@@ -16,6 +16,9 @@ namespace Pentominoes
 			"the board to be solved, and press enter 2 times when finished:\n";
 		std::string line;
 		std::getline(std::cin, line);
+		mWidth = 0;
+		mHeight = 0;
+		mBoard.clear();
 		while (line[0])
 		{
 			int len = line.length();
@@ -479,25 +482,6 @@ namespace Pentominoes
 			}
 		}
 		
-		return reflected;
-	}
-
-	// Precondition: mHeight == mWidth
-	PentominoBoard PentominoBoard::getAntidiagonalReflection() const
-	{
-		assert(mHeight == mWidth);
-		PentominoBoard reflected{ *this };
-		reflected.mBoard.clear();
-
-		for (int row = 0; row < mHeight; row++)
-		{
-			for (int col = 0; col < mWidth; col++)
-			{
-				int reflectedIndex = (mWidth - 1 - col) * mWidth + row;
-				reflected.mBoard += mBoard[reflectedIndex];
-			}
-		}
-
 		return reflected;
 	}
 

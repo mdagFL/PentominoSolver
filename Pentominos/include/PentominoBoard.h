@@ -46,7 +46,6 @@ namespace Pentominoes
 		PentominoBoard getRotated180() const;
 		PentominoBoard getVerticalReflection() const;
 		PentominoBoard getHorizontalReflection() const;
-		PentominoBoard getAntidiagonalReflection() const;
 
 	private:
 		static HANDLE consoleHandle;
