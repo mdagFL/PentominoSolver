@@ -14,7 +14,7 @@ To finish entering a board, simply enter a blank line.
 Keep in mind that any board containing a number of zeroes not divisible by 5, or islands of zeroes not divislbe by 5, will never have any solutions.
 
 Any characters that are not zero or 1 are automatically be converted to 1.
-If the entry is not a rectangle of 1s and 0s, any empty space is be assumed to be filled with ones.
+If the entry is not a rectangle of 1s and 0s, any empty space is assumed to be filled with ones.
 
 # Solving a Board
 Boards are solved by using the "solve" command. This command should only be used after a board has already been entered using "board"
