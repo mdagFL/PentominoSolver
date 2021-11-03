@@ -13,7 +13,7 @@ To finish entering a board, simply enter a blank line.
 
 Keep in mind that any board containing a number of zeroes not divisible by 5, or islands of zeroes not divislbe by 5, will never have any solutions.
 
-Any characters that are not zero or 1 are automatically be converted to 1.
+Any characters that are not 0s, 1s, or new lines are automatically converted to 1.
 If the entry is not a rectangle of 1s and 0s, any empty space is assumed to be filled with ones.
 
 # Solving a Board
