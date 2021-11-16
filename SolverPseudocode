@@ -11,18 +11,13 @@ searchSimple(piece2try, coord2try)
         else if (possibleSolution())
             for i = 0 to 63
                 piece p = piece(i)
-                search(p, getNextCoord())
+                search(p, map.find('0')
             popPentomino() // leaf node, backtrack
             return;
         else
             popPentomino() // leaf node, backtrack
             return;
 
-point getNextCoord()
-    for (i = 0 to map.height)
-        for (j = 0 to map.width)
-            if (map[i*width+j] = '0')
-                return point(i, j)
     
     
 bool isPossibleSolution()
