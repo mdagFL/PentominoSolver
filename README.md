@@ -11,7 +11,7 @@ Boards are input by using the "board" command and entering lines of '1's and '0'
 '0's represent spaces which must be covered by pentominoes in solutions.
 To finish entering a board, simply enter a blank line.
 
-NOTE: Any board containing a number of zeroes not divisible by 5, or any islands of zeroes not divislbe by 5, will never have any solutions.
+NOTE: Any board containing a number of zeroes not divisible by 5, or any islands of zeroes not divisible by 5, will never have any solutions.
 
 Any characters that are not 0s, 1s, or new lines are automatically converted to 1.
 If the entry is not a rectangle of 1s and 0s, any empty space is assumed to be filled with ones.
